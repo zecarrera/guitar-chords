@@ -51,7 +51,9 @@ npm run db:studio
 
 Recommended free provider: `Neon`.
 
-Create a free Neon project, then set `DATABASE_URL` in `.env` to your Neon Postgres connection string.
+Create a free Neon project, then copy both of these from Neon:
+- `DATABASE_URL`: the pooled connection string for the app runtime
+- `DIRECT_URL`: the direct connection string for Prisma migrations
 
 Run the database setup flow:
 
@@ -74,17 +76,17 @@ Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. 
 
 - A ready-to-sync `render.yaml` blueprint is included at the repo root
 - The recommended free persistent setup is: Render free web service + external Neon Postgres
-- Deploy builds with `npm run db:generate && npm run build`
-- Pre-deploy runs `npm run db:migrate && npm run db:seed`
+- Render free does not support `preDeployCommand`, so the Blueprint build step runs `npm run db:generate && npm run db:migrate && npm run db:seed && npm run build`
 - Health checks use `/api/health`
-- During the initial Blueprint sync, Render will prompt you for `DATABASE_URL` because it is marked with `sync: false`
-- Set that value to your Neon connection string
+- During the initial Blueprint sync, Render will prompt you for both `DATABASE_URL` and `DIRECT_URL` because they are marked with `sync: false`
+- Set `DATABASE_URL` to Neon’s pooled URL
+- Set `DIRECT_URL` to Neon’s direct URL
 - `ENABLE_DATABASE_READS=true` in the deployment so the app uses Neon-backed persistence
 - `SEED_DEMO_DATA=true` lets the first deploy populate baseline content if the database is empty
 
 ## Neon setup notes
 
 1. Create a free Neon project.
-2. Copy the Postgres connection string from Neon.
-3. Use that value for local `.env` and for Render's `DATABASE_URL` prompt during Blueprint creation.
+2. Copy both the pooled and direct Postgres connection strings from Neon.
+3. Use those values for local `.env` and for Render's `DATABASE_URL` / `DIRECT_URL` prompts during Blueprint creation.
 4. After the first deploy and initial seed, you can keep `SEED_DEMO_DATA=true` safely because the seed script skips when songs already exist, or set it to `false` once you no longer want automatic baseline seeding.

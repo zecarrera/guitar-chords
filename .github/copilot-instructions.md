@@ -18,6 +18,8 @@ There is no automated test runner configured yet, so there is no single-test com
 
 - This is a single-codebase `Next.js` App Router application intended for Render deployment
 - `render.yaml` defines the recommended free deployment: Render web service plus an externally supplied `DATABASE_URL`
+- On Render free, database migration and seeding run in `buildCommand` because `preDeployCommand` is not supported on free web services
+- For Neon, use a pooled `DATABASE_URL` for runtime reads and a direct `DIRECT_URL` for Prisma migrations
 - UI routes live in `app/` and load through `lib/data.ts`, which reads PostgreSQL only when `ENABLE_DATABASE_READS=true` and otherwise falls back to `lib/demo-data.ts`
 - The long-term relational model is defined in `prisma/schema.prisma` with separate models for songs, artists, genres, custom lists, chord documents, video links, and import sources
 - Imported PDFs and external links are source assets, while normalized metadata lives separately so filtering and browsing do not depend on raw import output
@@ -29,5 +31,5 @@ There is no automated test runner configured yet, so there is no single-test com
 - Keep import flows review-first: new PDFs and external links should create draft or reviewable records rather than publishing immediately
 - Prefer extending the relational schema instead of storing core browsing metadata inside unstructured JSON
 - Keep `lib/demo-data.ts` aligned with the Prisma-backed shapes because it doubles as the seed source and the fallback dataset
-- Prefer Neon as the free persistent Postgres provider for this project type; Render should receive its connection string through the `DATABASE_URL` secret prompt in the Blueprint flow
+- Prefer Neon as the free persistent Postgres provider for this project type; Render should receive both `DATABASE_URL` and `DIRECT_URL` during the Blueprint secret prompt flow
 - When changing Next.js behavior, check the version-specific guidance in `AGENTS.md` and the relevant docs under `node_modules/next/dist/docs/`
