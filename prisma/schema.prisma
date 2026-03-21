@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SongStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SourceType {
+  PDF
+  EXTERNAL_LINK
+}
+
+enum VideoType {
+  TUTORIAL
+  SONG
+}
+
+enum ImportStatus {
+  QUEUED
+  PROCESSING
+  READY_FOR_REVIEW
+  FAILED
+  COMPLETED
+}
+
+model Artist {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  bio       String?
+  songs     Song[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Genre {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  songs     Song[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomList {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isPinned    Boolean  @default(false)
+  songs       Song[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Song {
+  id           String          @id @default(cuid())
+  title        String
+  slug         String          @unique
+  description  String?
+  notes        String?
+  keySignature String?
+  capo         Int?
+  tuning       String?
+  difficulty   String?
+  status       SongStatus      @default(DRAFT)
+  artistId     String
+  artist       Artist          @relation(fields: [artistId], references: [id], onDelete: Restrict)
+  genres       Genre[]
+  customLists  CustomList[]
+  documents    ChordDocument[]
+  videoLinks   VideoLink[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([artistId])
+  @@index([status])
+}
+
+model ChordDocument {
+  id             String        @id @default(cuid())
+  songId          String
+  song            Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  title           String
+  sourceType      SourceType
+  sourceUrl       String?
+  fileUrl         String?
+  storageKey      String?
+  extractedText   String?
+  htmlContent     String?
+  scrollSpeed     Int?
+  importSourceId  String?
+  importSource    ImportSource? @relation(fields: [importSourceId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([songId])
+  @@index([importSourceId])
+}
+
+model VideoLink {
+  id        String    @id @default(cuid())
+  songId     String
+  song      Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  type      VideoType
+  label     String
+  url       String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([songId])
+}
+
+model ImportSource {
+  id               String          @id @default(cuid())
+  sourceType       SourceType
+  externalUrl      String?
+  originalFilename String?
+  storageKey       String?
+  status           ImportStatus    @default(QUEUED)
+  errorMessage     String?
+  documents        ChordDocument[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([status])
+}
