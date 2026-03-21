@@ -1,30 +1,30 @@
 import Link from "next/link";
 
-import { songs, stats } from "@/lib/demo-data";
+import { getLibrarySnapshot } from "@/lib/data";
 
-const quickLinks = [
-  {
-    title: "Import new chord sheets",
-    href: "/import",
-    description:
-      "Review PDF uploads and external links before they become part of your library.",
-  },
-  {
-    title: "Browse song library",
-    href: "/songs",
-    description:
-      "Filter songs by artist, genre, custom list membership, and ingestion source.",
-  },
-  {
-    title: "Play along in reader mode",
-    href: `/songs/${songs[0].slug}`,
-    description:
-      "Open a chord sheet, tune the auto-scroll speed, and keep tutorial links close by.",
-  },
-];
-
-export default function Home() {
+export default async function Home() {
+  const { songs, source, stats } = await getLibrarySnapshot();
   const recentSongs = songs.slice(0, 3);
+  const quickLinks = [
+    {
+      title: "Import new chord sheets",
+      href: "/import",
+      description:
+        "Review PDF uploads and external links before they become part of your library.",
+    },
+    {
+      title: "Browse song library",
+      href: "/songs",
+      description:
+        "Filter songs by artist, genre, custom list membership, and ingestion source.",
+    },
+    {
+      title: "Play along in reader mode",
+      href: songs[0] ? `/songs/${songs[0].slug}` : "/songs",
+      description:
+        "Open a chord sheet, tune the auto-scroll speed, and keep tutorial links close by.",
+    },
+  ];
 
   return (
     <div className="space-y-10">
@@ -41,6 +41,9 @@ export default function Home() {
             deployment. It keeps the UI responsive, treats imported content as
             reviewable drafts, and gives every song a dedicated reader view with
             adjustable auto-scroll.
+          </p>
+          <p className="mt-4 inline-flex rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
+            Data source: {source === "database" ? "PostgreSQL" : "demo seed"}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link

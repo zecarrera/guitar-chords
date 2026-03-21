@@ -1,8 +1,10 @@
 import Link from "next/link";
 
-import { artists } from "@/lib/demo-data";
+import { getArtists } from "@/lib/data";
 
-export default function ArtistsPage() {
+export default async function ArtistsPage() {
+  const artists = await getArtists();
+
   return (
     <div className="space-y-8">
       <section>

@@ -59,3 +59,11 @@ export type ImportQueueItem = {
   status: "queued" | "processing" | "ready_for_review";
   summary: string;
 };
+
+export type LibraryStat = {
+  label: string;
+  value: string;
+  description: string;
+};
+
+export type DataSourceKind = "database" | "demo";

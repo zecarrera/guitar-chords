@@ -41,6 +41,8 @@ npm run build
 npm run lint
 npm run typecheck
 npm run db:generate
+npm run db:migrate
+npm run db:seed
 npm run db:push
 npm run db:studio
 ```
@@ -49,7 +51,15 @@ npm run db:studio
 
 Set `DATABASE_URL` in `.env` to a PostgreSQL database.
 
-The current UI renders from `lib/demo-data.ts` so the app can build before a database is connected. The Prisma schema is already defined in `prisma/schema.prisma` for the next phase of wiring live persistence.
+Run the database setup flow:
+
+```bash
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
+
+Set `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. This is enabled in `render.yaml` for production. If reads are disabled or the database is temporarily unavailable, the app falls back to `lib/demo-data.ts` so the UI remains deployable.
 
 ## Architecture overview
 
@@ -60,7 +70,9 @@ The current UI renders from `lib/demo-data.ts` so the app can build before a dat
 
 ## Render deployment direction
 
-- Deploy as a Render web service
-- Provision PostgreSQL and set `DATABASE_URL`
-- Use S3-compatible storage or Cloudinary for uploaded PDFs
-- Keep PDF and external-link imports reviewable before publishing songs
+- A ready-to-sync `render.yaml` blueprint is included at the repo root
+- The blueprint provisions a Node web service plus a PostgreSQL database
+- Deploy builds with `npm run db:generate && npm run build`
+- Pre-deploy runs `npm run db:migrate && npm run db:seed`
+- Health checks use `/api/health`
+- Keep `SEED_DEMO_DATA=true` for the first baseline deploy, then turn it off after real content is added

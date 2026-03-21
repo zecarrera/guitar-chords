@@ -1,4 +1,4 @@
-import { importQueue } from "@/lib/demo-data";
+import { getImportQueue } from "@/lib/data";
 
 const importSteps = [
   "Upload a PDF or paste a canonical source link.",
@@ -7,7 +7,9 @@ const importSteps = [
   "Review and edit the draft before marking it as published.",
 ];
 
-export default function ImportPage() {
+export default async function ImportPage() {
+  const importQueue = await getImportQueue();
+
   return (
     <div className="space-y-8">
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">

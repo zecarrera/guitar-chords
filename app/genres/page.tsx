@@ -1,6 +1,8 @@
-import { genres } from "@/lib/demo-data";
+import { getGenres } from "@/lib/data";
 
-export default function GenresPage() {
+export default async function GenresPage() {
+  const genres = await getGenres();
+
   return (
     <div className="space-y-8">
       <section>

@@ -1,8 +1,10 @@
 import Link from "next/link";
 
-import { songs } from "@/lib/demo-data";
+import { getSongs } from "@/lib/data";
 
-export default function SongsPage() {
+export default async function SongsPage() {
+  const songs = await getSongs();
+
   return (
     <div className="space-y-8">
       <section>

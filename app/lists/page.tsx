@@ -1,6 +1,8 @@
-import { customLists } from "@/lib/demo-data";
+import { getCustomLists } from "@/lib/data";
 
-export default function ListsPage() {
+export default async function ListsPage() {
+  const customLists = await getCustomLists();
+
   return (
     <div className="space-y-8">
       <section>

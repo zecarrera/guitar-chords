@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
-import { getSongBySlug, songs } from "@/lib/demo-data";
+import { getSongBySlug, getSongs } from "@/lib/data";
 
 type SongDetailPageProps = {
   params: Promise<{
@@ -10,7 +10,9 @@ type SongDetailPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const songs = await getSongs();
+
   return songs.map((song) => ({
     slug: song.slug,
   }));
@@ -20,7 +22,7 @@ export async function generateMetadata({
   params,
 }: SongDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const song = getSongBySlug(slug);
+  const song = await getSongBySlug(slug);
 
   if (!song) {
     return {
@@ -38,7 +40,7 @@ export default async function SongDetailPage({
   params,
 }: SongDetailPageProps) {
   const { slug } = await params;
-  const song = getSongBySlug(slug);
+  const song = await getSongBySlug(slug);
 
   if (!song) {
     notFound();
