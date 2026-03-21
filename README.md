@@ -49,7 +49,9 @@ npm run db:studio
 
 ## Database setup
 
-Set `DATABASE_URL` in `.env` to a PostgreSQL database.
+Recommended free provider: `Neon`.
+
+Create a free Neon project, then set `DATABASE_URL` in `.env` to your Neon Postgres connection string.
 
 Run the database setup flow:
 
@@ -59,7 +61,7 @@ npm run db:migrate
 npm run db:seed
 ```
 
-Set `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. This is enabled in `render.yaml` for production. If reads are disabled or the database is temporarily unavailable, the app falls back to `lib/demo-data.ts` so the UI remains deployable.
+Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. If reads are disabled or the database is temporarily unavailable, the app falls back to `lib/demo-data.ts` so the UI remains deployable.
 
 ## Architecture overview
 
@@ -71,8 +73,18 @@ Set `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. T
 ## Render deployment direction
 
 - A ready-to-sync `render.yaml` blueprint is included at the repo root
-- The blueprint provisions a Node web service plus a PostgreSQL database
+- The recommended free persistent setup is: Render free web service + external Neon Postgres
 - Deploy builds with `npm run db:generate && npm run build`
 - Pre-deploy runs `npm run db:migrate && npm run db:seed`
 - Health checks use `/api/health`
-- Keep `SEED_DEMO_DATA=true` for the first baseline deploy, then turn it off after real content is added
+- During the initial Blueprint sync, Render will prompt you for `DATABASE_URL` because it is marked with `sync: false`
+- Set that value to your Neon connection string
+- `ENABLE_DATABASE_READS=true` in the deployment so the app uses Neon-backed persistence
+- `SEED_DEMO_DATA=true` lets the first deploy populate baseline content if the database is empty
+
+## Neon setup notes
+
+1. Create a free Neon project.
+2. Copy the Postgres connection string from Neon.
+3. Use that value for local `.env` and for Render's `DATABASE_URL` prompt during Blueprint creation.
+4. After the first deploy and initial seed, you can keep `SEED_DEMO_DATA=true` safely because the seed script skips when songs already exist, or set it to `false` once you no longer want automatic baseline seeding.
