@@ -24,6 +24,12 @@ export default async function Home() {
       description:
         "Open a chord sheet, tune the auto-scroll speed, and keep tutorial links close by.",
     },
+    {
+      title: "Manage live library",
+      href: "/manage",
+      description:
+        "Create songs, edit chord content, and maintain artists, genres, lists, and video links.",
+    },
   ];
 
   return (
@@ -79,7 +85,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {quickLinks.map((link) => (
           <Link
             key={link.title}

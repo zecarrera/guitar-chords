@@ -116,7 +116,15 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
           },
         },
         documents: {
-          include: {
+          select: {
+            id: true,
+            title: true,
+            sourceType: true,
+            sourceUrl: true,
+            fileUrl: true,
+            fileName: true,
+            extractedText: true,
+            scrollSpeed: true,
             importSource: true,
           },
           orderBy: {
@@ -206,6 +214,12 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
       importNotes:
         importSource?.errorMessage ??
         `Import status: ${toTitleCase(importSource?.status ?? "completed")}.`,
+      documentUrl: primaryDocument
+        ? primaryDocument.fileName
+          ? `/api/documents/${primaryDocument.id}/file`
+          : primaryDocument.fileUrl ?? primaryDocument.sourceUrl
+        : null,
+      documentLabel: primaryDocument?.fileName ?? primaryDocument?.title ?? null,
       videoLinks: song.videoLinks.map((video) => ({
         label: video.label,
         type: video.type === "TUTORIAL" ? "tutorial" : "song",

@@ -27,6 +27,7 @@ const navigation = [
   { href: "/genres", label: "Genres" },
   { href: "/lists", label: "Lists" },
   { href: "/import", label: "Import" },
+  { href: "/manage", label: "Manage" },
 ];
 
 export default function RootLayout({

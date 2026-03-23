@@ -113,6 +113,17 @@ export default async function SongDetailPage({
               </span>
             ))}
           </div>
+
+          {song.documentUrl ? (
+            <a
+              href={song.documentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-amber-300 transition hover:border-amber-300/40"
+            >
+              Open source document
+            </a>
+          ) : null}
         </div>
 
         <aside className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">

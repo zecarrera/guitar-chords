@@ -28,6 +28,8 @@ export type Song = {
   summary: string;
   description: string;
   importNotes: string;
+  documentUrl?: string | null;
+  documentLabel?: string | null;
   videoLinks: VideoLink[];
   sections: ChordSection[];
 };

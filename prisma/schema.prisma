@@ -94,6 +94,9 @@ model ChordDocument {
   sourceType      SourceType
   sourceUrl       String?
   fileUrl         String?
+  fileName        String?
+  mimeType        String?
+  fileData        Bytes?
   storageKey      String?
   extractedText   String?
   htmlContent     String?
