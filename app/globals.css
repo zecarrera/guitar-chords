@@ -46,3 +46,17 @@ select,
 button {
   font: inherit;
 }
+
+button:not(:disabled),
+[role="button"]:not(:disabled),
+input[type="checkbox"],
+input[type="file"],
+input[type="radio"],
+input[type="range"],
+select {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
