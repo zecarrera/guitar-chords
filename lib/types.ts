@@ -1,9 +1,18 @@
 export type SourceType = "pdf" | "external_link";
 export type VideoType = "tutorial" | "song";
+export type ChordFret = number | "x";
 
 export type ChordSection = {
   title: string;
   lines: string[];
+};
+
+export type ChordDefinition = {
+  id?: string;
+  name: string;
+  frets: ChordFret[];
+  fingers: Array<number | null>;
+  baseFret?: number | null;
 };
 
 export type VideoLink = {

@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 const navigation = [
   { href: "/", label: "Overview" },
   { href: "/songs", label: "Songs" },
+  { href: "/chords", label: "Chords" },
   { href: "/artists", label: "Artists" },
   { href: "/genres", label: "Genres" },
   { href: "/lists", label: "Lists" },

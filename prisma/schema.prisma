@@ -110,6 +110,16 @@ model ChordDocument {
   @@index([importSourceId])
 }
 
+model ChordDefinition {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  frets     String[]
+  fingers   Int[]
+  baseFret  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model VideoLink {
   id        String    @id @default(cuid())
   songId     String

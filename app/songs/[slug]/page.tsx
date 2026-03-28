@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
-import { getSongBySlug, getSongs } from "@/lib/data";
+import { getChordDefinitions, getSongBySlug, getSongs } from "@/lib/data";
 
 type SongDetailPageProps = {
   params: Promise<{
@@ -40,7 +40,10 @@ export default async function SongDetailPage({
   params,
 }: SongDetailPageProps) {
   const { slug } = await params;
-  const song = await getSongBySlug(slug);
+  const [song, chordDefinitions] = await Promise.all([
+    getSongBySlug(slug),
+    getChordDefinitions(),
+  ]);
 
   if (!song) {
     notFound();
@@ -58,6 +61,7 @@ export default async function SongDetailPage({
       </section>
 
       <AutoScrollReader
+        chordDefinitions={chordDefinitions}
         defaultSpeed={song.scrollSpeed}
         sections={song.sections}
         videoLinks={song.videoLinks}

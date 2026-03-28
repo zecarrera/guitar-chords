@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
-import type { ChordSection, VideoLink } from "@/lib/types";
+import { buildChordShapeLookup, getChordShape } from "@/lib/chord-library";
+import type { ChordDefinition, ChordSection, VideoLink } from "@/lib/types";
 
 type AutoScrollReaderProps = {
+  chordDefinitions?: ChordDefinition[];
   defaultSpeed: number;
   sections: ChordSection[];
   videoLinks?: VideoLink[];
@@ -13,6 +22,250 @@ type AutoScrollReaderProps = {
 };
 
 const storageKey = "guitar-chords:auto-scroll-speed";
+const chordTokenPattern = /\[([^[\]]+)\]/g;
+const guitarStrings = ["E", "A", "D", "G", "B", "e"];
+
+function subscribeToSpeedStore() {
+  return () => {};
+}
+
+function getStoredSpeedSnapshot() {
+  const storedSpeed = window.localStorage.getItem(storageKey);
+
+  if (!storedSpeed) {
+    return null;
+  }
+
+  const parsedSpeed = Number(storedSpeed);
+
+  return Number.isFinite(parsedSpeed) && parsedSpeed > 0 ? parsedSpeed : null;
+}
+
+function getServerSpeedSnapshot() {
+  return null;
+}
+
+type ChordDiagramProps = {
+  chordName: string;
+  chordLookup: Record<string, ChordDefinition>;
+};
+
+function ChordDiagram({ chordName, chordLookup }: ChordDiagramProps) {
+  const chordShape = getChordShape(chordName, chordLookup);
+
+  if (!chordShape) {
+    return (
+      <div className="w-52 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
+        <p className="text-sm font-semibold text-white">{chordName}</p>
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          Chord diagram not in the built-in library yet.
+        </p>
+      </div>
+    );
+  }
+
+  const firstDisplayedFret =
+    chordShape.baseFret && chordShape.baseFret > 1 ? chordShape.baseFret : 1;
+  const stringSpacing = 30;
+  const fretSpacing = 24;
+  const gridLeft = 34;
+  const gridTop = 44;
+  const indicatorY = 24;
+  const fretCount = 5;
+  const stringsWidth = stringSpacing * (guitarStrings.length - 1);
+  const gridHeight = fretSpacing * fretCount;
+
+  return (
+    <div className="w-72 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-white">{chordShape.name}</p>
+          <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-slate-400">
+            Chord diagram
+          </p>
+        </div>
+        {chordShape.baseFret && chordShape.baseFret > 1 ? (
+          <span className="rounded-full bg-white/5 px-2 py-1 text-[11px] font-semibold text-slate-200">
+            Fret {chordShape.baseFret}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+        <svg
+          viewBox="0 0 230 180"
+          role="img"
+          aria-label={`${chordShape.name} chord diagram`}
+          className="h-auto w-full"
+        >
+          {guitarStrings.map((stringName, index) => {
+            const x = gridLeft + index * stringSpacing;
+
+            return (
+              <g key={`${chordShape.name}-${stringName}-string`}>
+                <text
+                  x={x}
+                  y={12}
+                  textAnchor="middle"
+                  className="fill-slate-400 text-[10px] font-semibold"
+                >
+                  {stringName}
+                </text>
+                <line
+                  x1={x}
+                  y1={gridTop}
+                  x2={x}
+                  y2={gridTop + gridHeight}
+                  stroke="rgba(255,255,255,0.18)"
+                  strokeWidth="1.5"
+                />
+              </g>
+            );
+          })}
+
+          {Array.from({ length: fretCount + 1 }).map((_, index) => {
+            const y = gridTop + index * fretSpacing;
+
+            return (
+              <line
+                key={`fret-line-${index}`}
+                x1={gridLeft}
+                y1={y}
+                x2={gridLeft + stringsWidth}
+                y2={y}
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth={firstDisplayedFret === 1 && index === 0 ? 3 : 1.5}
+              />
+            );
+          })}
+
+          {Array.from({ length: fretCount }).map((_, index) => (
+            <text
+              key={`fret-label-${index}`}
+              x={10}
+              y={gridTop + index * fretSpacing + fretSpacing / 2 + 4}
+              className="fill-slate-500 text-[10px] font-semibold"
+            >
+              {firstDisplayedFret + index}
+            </text>
+          ))}
+
+          {guitarStrings.map((stringName, index) => {
+            const x = gridLeft + index * stringSpacing;
+            const fret = chordShape.frets[index];
+
+            if (fret === "x") {
+              return (
+                <text
+                  key={`${chordShape.name}-${stringName}-mute`}
+                  x={x}
+                  y={indicatorY}
+                  textAnchor="middle"
+                  className="fill-rose-300 text-[12px] font-semibold"
+                >
+                  x
+                </text>
+              );
+            }
+
+            if (fret === 0) {
+              return (
+                <circle
+                  key={`${chordShape.name}-${stringName}-open`}
+                  cx={x}
+                  cy={indicatorY - 2}
+                  r={6}
+                  fill="none"
+                  stroke="rgba(251,191,36,0.9)"
+                  strokeWidth="2"
+                />
+              );
+            }
+
+            const displayFret = fret - firstDisplayedFret + 1;
+
+            if (displayFret < 1 || displayFret > fretCount) {
+              return null;
+            }
+
+            const finger = chordShape.fingers[index];
+            const y = gridTop + (displayFret - 0.5) * fretSpacing;
+
+            return (
+              <g key={`${chordShape.name}-${stringName}-dot`}>
+                <circle cx={x} cy={y} r={9} fill="rgba(251,191,36,0.95)" />
+                {finger ? (
+                  <text
+                    x={x}
+                    y={y + 3}
+                    textAnchor="middle"
+                    className="fill-slate-950 text-[10px] font-bold"
+                  >
+                    {finger}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+type ChordLineProps = {
+  line: string;
+  onHideChordTooltip: () => void;
+  onShowChordTooltip: (chordName: string, target: HTMLElement) => void;
+};
+
+function ChordLine({
+  line,
+  onHideChordTooltip,
+  onShowChordTooltip,
+}: ChordLineProps) {
+  const matches = Array.from(line.matchAll(chordTokenPattern));
+
+  if (matches.length === 0) {
+    return <div className="whitespace-pre-wrap">{line}</div>;
+  }
+
+  let lastIndex = 0;
+
+  return (
+    <div className="whitespace-pre-wrap">
+      {matches.map((match, index) => {
+        const chordName = match[1]?.trim();
+        const startIndex = match.index ?? 0;
+        const before = line.slice(lastIndex, startIndex);
+        lastIndex = startIndex + match[0].length;
+
+        return (
+          <Fragment key={`${chordName}-${startIndex}-${index}`}>
+            {before}
+            <span className="inline-block align-baseline">
+              <button
+                type="button"
+                className="cursor-help rounded-md bg-amber-300/15 px-1.5 py-0.5 font-semibold text-amber-200 underline decoration-dotted underline-offset-4 transition hover:bg-amber-300/25 focus-visible:bg-amber-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
+                onBlur={onHideChordTooltip}
+                onMouseEnter={(event) =>
+                  onShowChordTooltip(chordName, event.currentTarget)
+                }
+                onMouseLeave={onHideChordTooltip}
+                onFocus={(event) =>
+                  onShowChordTooltip(chordName, event.currentTarget)
+                }
+              >
+                {match[0]}
+              </button>
+            </span>
+          </Fragment>
+        );
+      })}
+      {line.slice(lastIndex)}
+    </div>
+  );
+}
 
 function getEmbeddedVideoUrl(url: string) {
   if (!URL.canParse(url)) {
@@ -56,6 +309,7 @@ function getEmbeddedVideoUrl(url: string) {
 }
 
 export function AutoScrollReader({
+  chordDefinitions = [],
   defaultSpeed,
   sections,
   videoLinks = [],
@@ -63,27 +317,20 @@ export function AutoScrollReader({
   documentUrl,
 }: AutoScrollReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [speed, setSpeed] = useState(() => {
-    if (typeof window === "undefined") {
-      return defaultSpeed;
-    }
-
-    const storedSpeed = window.localStorage.getItem(storageKey);
-
-    if (!storedSpeed) {
-      return defaultSpeed;
-    }
-
-    const parsedSpeed = Number(storedSpeed);
-
-    if (Number.isFinite(parsedSpeed) && parsedSpeed > 0) {
-      return parsedSpeed;
-    }
-
-    return defaultSpeed;
-  });
+  const savedSpeed = useSyncExternalStore(
+    subscribeToSpeedStore,
+    getStoredSpeedSnapshot,
+    getServerSpeedSnapshot,
+  );
+  const [manualSpeed, setManualSpeed] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [activeChordTooltip, setActiveChordTooltip] = useState<{
+    chordName: string;
+    left: number;
+    top: number;
+  } | null>(null);
+  const speed = manualSpeed ?? savedSpeed ?? defaultSpeed;
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, String(speed));
@@ -145,6 +392,24 @@ export function AutoScrollReader({
   );
   const activeVideo =
     videoItems.find((video) => video.url === activeVideoUrl) ?? null;
+  const chordLookup = useMemo(
+    () => buildChordShapeLookup(chordDefinitions),
+    [chordDefinitions],
+  );
+
+  function hideChordTooltip() {
+    setActiveChordTooltip(null);
+  }
+
+  function showChordTooltip(chordName: string, target: HTMLElement) {
+    const rect = target.getBoundingClientRect();
+
+    setActiveChordTooltip({
+      chordName,
+      left: rect.left + rect.width / 2,
+      top: rect.top - 12,
+    });
+  }
 
   return (
     <section
@@ -193,13 +458,14 @@ export function AutoScrollReader({
               max={84}
               step={3}
               value={speed}
-              onChange={(event) => setSpeed(Number(event.target.value))}
+              onChange={(event) => setManualSpeed(Number(event.target.value))}
             />
           </label>
         </div>
 
         <div
           ref={containerRef}
+          onScroll={hideChordTooltip}
           className="h-[70vh] space-y-6 overflow-y-auto px-4 py-5 sm:h-[74vh] sm:px-6 sm:py-6 lg:h-[78vh]"
         >
           {sections.map((section, index) => (
@@ -210,13 +476,35 @@ export function AutoScrollReader({
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
                 {section.title}
               </h3>
-              <pre className="mt-4 overflow-x-auto whitespace-pre-wrap font-mono text-base leading-8 text-slate-100">
-                {section.lines.join("\n")}
-              </pre>
+              <div className="mt-4 space-y-1 overflow-x-auto font-mono text-base leading-8 text-slate-100">
+                {section.lines.map((line, lineIndex) => (
+                  <ChordLine
+                    key={`${section.title}-${index}-line-${lineIndex}`}
+                    line={line}
+                    onHideChordTooltip={hideChordTooltip}
+                    onShowChordTooltip={showChordTooltip}
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      {activeChordTooltip ? (
+        <div
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full"
+          style={{
+            left: activeChordTooltip.left,
+            top: activeChordTooltip.top,
+          }}
+        >
+          <ChordDiagram
+            chordName={activeChordTooltip.chordName}
+            chordLookup={chordLookup}
+          />
+        </div>
+      ) : null}
 
       {videoItems.length > 0 || documentUrl ? (
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">

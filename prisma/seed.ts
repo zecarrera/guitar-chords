@@ -1,4 +1,9 @@
 import { songs } from "../lib/demo-data";
+import {
+  defaultChordDefinitions,
+  serializeChordFingers,
+  serializeChordFrets,
+} from "../lib/chord-library";
 import { prisma } from "../lib/prisma";
 
 function toSongStatus(status: "draft" | "published") {
@@ -37,6 +42,16 @@ async function seed() {
     console.log("Skipping demo seed because SEED_DEMO_DATA=false.");
     return;
   }
+
+  await prisma.chordDefinition.createMany({
+    data: defaultChordDefinitions.map((chord) => ({
+      name: chord.name,
+      frets: serializeChordFrets(chord.frets),
+      fingers: serializeChordFingers(chord.fingers),
+      baseFret: chord.baseFret ?? null,
+    })),
+    skipDuplicates: true,
+  });
 
   const existingSongs = await prisma.song.count();
 
