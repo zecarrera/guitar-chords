@@ -189,6 +189,13 @@ export function getChordShape(
   return chordLookup[normalized] ?? null;
 }
 
+export function isKnownChordName(
+  value: string,
+  chordLookup = defaultChordShapeLookup,
+) {
+  return Boolean(getChordShape(value, chordLookup));
+}
+
 export function formatChordFrets(frets: ChordDefinition["frets"]) {
   return frets.map((fret) => (typeof fret === "number" ? String(fret) : fret)).join(", ");
 }

@@ -24,6 +24,14 @@ type AutoScrollReaderProps = {
 const storageKey = "guitar-chords:auto-scroll-speed";
 const chordTokenPattern = /\[([^[\]]+)\]/g;
 const guitarStrings = ["E", "A", "D", "G", "B", "e"];
+const minimumScrollSpeed = 6;
+const maximumScrollSpeed = 120;
+const speedSliderStep = 1;
+const speedButtonStep = 1;
+
+function clampScrollSpeed(value: number) {
+  return Math.min(maximumScrollSpeed, Math.max(minimumScrollSpeed, Math.round(value)));
+}
 
 function subscribeToSpeedStore() {
   return () => {};
@@ -317,6 +325,7 @@ export function AutoScrollReader({
   documentUrl,
 }: AutoScrollReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef(0);
   const savedSpeed = useSyncExternalStore(
     subscribeToSpeedStore,
     getStoredSpeedSnapshot,
@@ -331,6 +340,10 @@ export function AutoScrollReader({
     top: number;
   } | null>(null);
   const speed = manualSpeed ?? savedSpeed ?? defaultSpeed;
+
+  function updateSpeed(nextSpeed: number) {
+    setManualSpeed(clampScrollSpeed(nextSpeed));
+  }
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, String(speed));
@@ -349,11 +362,13 @@ export function AutoScrollReader({
 
     let frameId = 0;
     let previousTimestamp = performance.now();
+    scrollPositionRef.current = container.scrollTop;
 
     const step = (timestamp: number) => {
       const elapsedSeconds = (timestamp - previousTimestamp) / 1000;
       previousTimestamp = timestamp;
-      container.scrollTop += speed * elapsedSeconds;
+      scrollPositionRef.current += speed * elapsedSeconds;
+      container.scrollTop = scrollPositionRef.current;
 
       const reachedBottom =
         container.scrollTop + container.clientHeight >=
@@ -433,6 +448,7 @@ export function AutoScrollReader({
               type="button"
               onClick={() => {
                 setIsPlaying(false);
+                scrollPositionRef.current = 0;
                 containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className="inline-flex min-w-24 cursor-pointer items-center justify-center rounded-full border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
@@ -451,21 +467,42 @@ export function AutoScrollReader({
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Scroll speed
             </span>
-            <input
-              className="mt-3 w-full cursor-pointer accent-amber-300"
-              type="range"
-              min={12}
-              max={84}
-              step={3}
-              value={speed}
-              onChange={(event) => setManualSpeed(Number(event.target.value))}
-            />
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => updateSpeed(speed - speedButtonStep)}
+                className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                aria-label="Decrease scroll speed"
+              >
+                -
+              </button>
+              <input
+                className="w-full cursor-pointer accent-amber-300"
+                type="range"
+                min={minimumScrollSpeed}
+                max={maximumScrollSpeed}
+                step={speedSliderStep}
+                value={speed}
+                onChange={(event) => updateSpeed(Number(event.target.value))}
+              />
+              <button
+                type="button"
+                onClick={() => updateSpeed(speed + speedButtonStep)}
+                className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                aria-label="Increase scroll speed"
+              >
+                +
+              </button>
+            </div>
           </label>
         </div>
 
         <div
           ref={containerRef}
-          onScroll={hideChordTooltip}
+          onScroll={(event) => {
+            hideChordTooltip();
+            scrollPositionRef.current = event.currentTarget.scrollTop;
+          }}
           className="h-[70vh] space-y-6 overflow-y-auto px-4 py-5 sm:h-[74vh] sm:px-6 sm:py-6 lg:h-[78vh]"
         >
           {sections.map((section, index) => (

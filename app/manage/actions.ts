@@ -253,6 +253,10 @@ export async function createSongAction(formData: FormData) {
   const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
   const normalizedSourceType: "PDF" | "EXTERNAL_LINK" =
     sourceType === "EXTERNAL_LINK" ? "EXTERNAL_LINK" : "PDF";
+  const normalizedSourceUrl =
+    normalizedSourceType === "EXTERNAL_LINK"
+      ? readRequiredString(formData, "sourceUrl")
+      : null;
   const extractedText =
     manualExtractedText ??
     (normalizedSourceType === "PDF" && pdfUpload
@@ -276,6 +280,7 @@ export async function createSongAction(formData: FormData) {
           {
             title: `${title} chord sheet`,
             sourceType: normalizedSourceType,
+            sourceUrl: normalizedSourceUrl,
             extractedText,
             scrollSpeed,
             fileName: pdfUpload?.fileName,
@@ -306,7 +311,6 @@ export async function updateSongAction(formData: FormData) {
   const documentId = readOptionalString(formData, "documentId");
   const documentTitle = readRequiredString(formData, "documentTitle");
   const sourceType = readRequiredString(formData, "sourceType");
-  const sourceUrl = readOptionalString(formData, "sourceUrl");
   const fileUrl = readOptionalString(formData, "fileUrl");
   const submittedExtractedText = readOptionalString(formData, "extractedText");
   const scrollSpeed = readOptionalNumber(formData, "scrollSpeed");
@@ -320,6 +324,12 @@ export async function updateSongAction(formData: FormData) {
   const slug = slugInput ? slugify(slugInput) : slugify(title);
   const normalizedSourceType: "PDF" | "EXTERNAL_LINK" =
     sourceType === "EXTERNAL_LINK" ? "EXTERNAL_LINK" : "PDF";
+  const normalizedSourceUrl =
+    normalizedSourceType === "EXTERNAL_LINK"
+      ? readRequiredString(formData, "sourceUrl")
+      : null;
+  const normalizedFileUrl =
+    normalizedSourceType === "PDF" ? fileUrl : null;
   const existingDocument = documentId
     ? await prisma.chordDocument.findUnique({
         where: {
@@ -343,8 +353,8 @@ export async function updateSongAction(formData: FormData) {
   const documentData = {
     title: documentTitle,
     sourceType: normalizedSourceType,
-    sourceUrl,
-    fileUrl,
+    sourceUrl: normalizedSourceUrl,
+    fileUrl: normalizedFileUrl,
     extractedText,
     scrollSpeed,
     ...(pdfUpload

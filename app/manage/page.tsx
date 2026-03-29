@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { SongDocumentFields } from "@/components/song-document-fields";
 import { getManageDashboardData } from "@/lib/admin-data";
 import { isDatabaseConfigured } from "@/lib/data";
 
@@ -140,77 +141,23 @@ export default async function ManagePage() {
               </label>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Artist</span>
-                <select
-                  name="artistId"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  defaultValue={artists[0]?.id}
-                  required
-                >
-                  {artists.map((artist) => (
-                    <option key={artist.id} value={artist.id}>
-                      {artist.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">
-                  Source type
-                </span>
-                <select
-                  name="sourceType"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  defaultValue="PDF"
-                >
-                  <option value="PDF">PDF</option>
-                  <option value="EXTERNAL_LINK">External link</option>
-                </select>
-              </label>
-            </div>
-
             <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">
-                Reader content
-              </span>
-              <textarea
-                name="extractedText"
-                rows={10}
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 font-mono text-sm text-white"
-                placeholder="Verse&#10;[G] line one&#10;[D] line two"
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">
-                PDF upload
-              </span>
-              <input
-                type="file"
-                name="pdfFile"
-                accept="application/pdf"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-amber-300 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-950"
-              />
-              <p className="text-xs leading-5 text-slate-400">
-                Uploaded PDFs are stored in PostgreSQL and parsed into the chord
-                sheet automatically. You can still edit the extracted text later.
-              </p>
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">
-                Scroll speed
-              </span>
-              <input
-                type="number"
-                min="1"
-                name="scrollSpeed"
-                defaultValue={24}
+              <span className="text-sm font-medium text-slate-200">Artist</span>
+              <select
+                name="artistId"
                 className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-              />
+                defaultValue={artists[0]?.id}
+                required
+              >
+                {artists.map((artist) => (
+                  <option key={artist.id} value={artist.id}>
+                    {artist.name}
+                  </option>
+                ))}
+              </select>
             </label>
+
+            <SongDocumentFields />
 
             <button
               type="submit"

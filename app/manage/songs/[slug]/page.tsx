@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SongDocumentFields } from "@/components/song-document-fields";
 import { getSongEditorData } from "@/lib/admin-data";
 import { isDatabaseConfigured } from "@/lib/data";
 
@@ -234,114 +235,32 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-semibold text-white">Chord document</p>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-sm font-semibold text-white">Chord document</p>
 
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-slate-200">
-                    Document title
-                  </span>
-                  <input
-                    name="documentTitle"
-                    defaultValue={primaryDocument?.title ?? `${song.title} chord sheet`}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                    required
+                <div className="mt-4">
+                  <SongDocumentFields
+                    includeDocumentTitle
+                    includeHostedPdfUrl
+                    defaultSourceType={primaryDocument?.sourceType ?? "PDF"}
+                    documentTitleDefaultValue={
+                      primaryDocument?.title ?? `${song.title} chord sheet`
+                    }
+                    sourceUrlDefaultValue={primaryDocument?.sourceUrl ?? ""}
+                    fileUrlDefaultValue={primaryDocument?.fileUrl ?? ""}
+                    extractedTextDefaultValue={primaryDocument?.extractedText ?? ""}
+                    extractedTextRows={18}
+                    scrollSpeedDefaultValue={primaryDocument?.scrollSpeed ?? 24}
+                    pdfFieldLabel="Replace PDF file"
+                    existingPdfFileHref={
+                      primaryDocument?.fileName
+                        ? `/api/documents/${primaryDocument.id}/file`
+                        : undefined
+                    }
+                    existingPdfFileName={primaryDocument?.fileName}
                   />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-slate-200">
-                    Source type
-                  </span>
-                  <select
-                    name="sourceType"
-                    defaultValue={primaryDocument?.sourceType ?? "PDF"}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  >
-                    <option value="PDF">PDF</option>
-                    <option value="EXTERNAL_LINK">External link</option>
-                  </select>
-                </label>
+                </div>
               </div>
-
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-slate-200">
-                    Source URL
-                  </span>
-                  <input
-                    name="sourceUrl"
-                    defaultValue={primaryDocument?.sourceUrl ?? ""}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-slate-200">
-                    File URL
-                  </span>
-                  <input
-                    name="fileUrl"
-                    defaultValue={primaryDocument?.fileUrl ?? ""}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  />
-                </label>
-              </div>
-
-              <label className="mt-4 block space-y-2">
-                <span className="text-sm font-medium text-slate-200">
-                  Reader content
-                </span>
-                <textarea
-                  name="extractedText"
-                  rows={18}
-                  defaultValue={primaryDocument?.extractedText ?? ""}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 font-mono text-sm text-white"
-                />
-                <p className="text-xs leading-5 text-slate-400">
-                  Leave the existing text untouched when replacing a PDF and the
-                  new file will refresh this chord sheet automatically.
-                </p>
-              </label>
-
-              <label className="mt-4 block space-y-2">
-                <span className="text-sm font-medium text-slate-200">
-                  Scroll speed
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  name="scrollSpeed"
-                  defaultValue={primaryDocument?.scrollSpeed ?? 24}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                />
-              </label>
-
-              <label className="mt-4 block space-y-2">
-                <span className="text-sm font-medium text-slate-200">
-                  Replace PDF file
-                </span>
-                <input
-                  type="file"
-                  name="pdfFile"
-                  accept="application/pdf"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white file:mr-4 file:rounded-full file:border-0 file:bg-amber-300 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-slate-950"
-                />
-                {primaryDocument?.fileName ? (
-                  <a
-                    href={`/api/documents/${primaryDocument.id}/file`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex text-xs font-semibold text-amber-300"
-                  >
-                    Current uploaded PDF: {primaryDocument.fileName}
-                  </a>
-                ) : null}
-                <p className="text-xs leading-5 text-slate-400">
-                  A newly uploaded PDF is parsed server-side and can update the
-                  reader content for auto-scroll playback.
-                </p>
-              </label>
-            </div>
 
             <button
               type="submit"
