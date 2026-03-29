@@ -52,14 +52,6 @@ function toTitleCase(value: string) {
     .join(" ");
 }
 
-function summarize(value?: string | null, fallback = "No summary yet.") {
-  if (!value) {
-    return fallback;
-  }
-
-  return value.length > 140 ? `${value.slice(0, 137)}...` : value;
-}
-
 function parseChordSections(extractedText?: string | null) {
   if (!extractedText) {
     return [
@@ -192,9 +184,6 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
     const importSource = primaryDocument?.importSource;
     const sourceType =
       primaryDocument?.sourceType === "EXTERNAL_LINK" ? "external_link" : "pdf";
-    const summarySource =
-      song.notes ?? song.description ?? primaryDocument?.extractedText ?? undefined;
-
     return {
       title: song.title,
       slug: song.slug,
@@ -209,7 +198,6 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
       difficulty: song.difficulty ?? "Unspecified",
       status: song.status === "PUBLISHED" ? "published" : "draft",
       scrollSpeed: primaryDocument?.scrollSpeed ?? 24,
-      summary: summarize(summarySource),
       description:
         song.description ??
         primaryDocument?.extractedText ??

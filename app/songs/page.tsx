@@ -38,10 +38,6 @@ export default async function SongsPage() {
               </span>
             </div>
 
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              {song.summary}
-            </p>
-
             <dl className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-white/5 p-3">
                 <dt className="text-xs uppercase tracking-wide text-slate-400">

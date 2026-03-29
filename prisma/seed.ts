@@ -98,7 +98,6 @@ async function seed() {
         title: song.title,
         slug: song.slug,
         description: song.description,
-        notes: song.summary,
         keySignature: song.keySignature,
         capo: song.capo,
         tuning: song.tuning,

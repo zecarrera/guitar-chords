@@ -151,9 +151,6 @@ export default async function Home() {
                     {song.status}
                   </span>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-slate-300">
-                  {song.summary}
-                </p>
               </Link>
             ))}
           </div>

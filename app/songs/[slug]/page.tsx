@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
@@ -33,7 +34,7 @@ export async function generateMetadata({
 
   return {
     title: `${song.title} · Guitar Chords Library`,
-    description: song.summary,
+    description: song.description,
   };
 }
 
@@ -58,12 +59,23 @@ export default async function SongDetailPage({
         title={song.title}
       />
       <section className="rounded-[2rem] border border-white/10 bg-slate-900/85 p-6 sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
-          {song.artist}
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold text-white sm:text-5xl">
-          {song.title}
-        </h1>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
+              {song.artist}
+            </p>
+            <h1 className="mt-3 text-4xl font-semibold text-white sm:text-5xl">
+              {song.title}
+            </h1>
+          </div>
+
+          <Link
+            href={`/manage/songs/${song.slug}`}
+            className="inline-flex rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+          >
+            Edit song
+          </Link>
+        </div>
       </section>
 
       <AutoScrollReader

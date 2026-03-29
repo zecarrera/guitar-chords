@@ -35,7 +35,6 @@ export type Song = {
   difficulty: string;
   status: "draft" | "published";
   scrollSpeed: number;
-  summary: string;
   description: string;
   importNotes: string;
   updatedAt: string;

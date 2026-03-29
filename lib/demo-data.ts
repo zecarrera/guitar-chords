@@ -21,8 +21,6 @@ export const songs: Song[] = [
     difficulty: "Intermediate",
     status: "published",
     scrollSpeed: 24,
-    summary:
-      "A calm opener with open-position voicings and a medium tempo that suits auto-scroll practice.",
     description:
       "This sample entry demonstrates how a normalized song record can point to an uploaded PDF while still carrying its own artist, genre, and list metadata. The reader content below is original placeholder material designed for the MVP interface.",
     importNotes:
@@ -83,8 +81,6 @@ export const songs: Song[] = [
     difficulty: "Advanced",
     status: "published",
     scrollSpeed: 30,
-    summary:
-      "A heavier electric arrangement that benefits from saved reader speed presets and quick access to reference videos.",
     description:
       "This sample entry is modeled as an external-link import. The canonical source stays attached to the song record, but the searchable metadata lives in the app so filters do not depend on third-party page structure.",
     importNotes:
@@ -145,8 +141,6 @@ export const songs: Song[] = [
     difficulty: "Beginner",
     status: "draft",
     scrollSpeed: 18,
-    summary:
-      "A beginner-friendly draft with simple changes, ideal for testing the import review flow before publishing.",
     description:
       "This song remains in draft status to represent content that has been imported but not fully reviewed. In the finished app, draft items would be editable before being included in normal browsing views.",
     importNotes:

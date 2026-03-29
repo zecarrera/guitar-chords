@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Guitar Chords Library",
   description:
-    "A responsive guitar chord library for organizing songs, imports, and play-along reader views.",
+    "A responsive guitar chord library for organizing songs and play-along reader views.",
 };
 
 const navigation = [
@@ -27,7 +27,6 @@ const navigation = [
   { href: "/artists", label: "Artists" },
   { href: "/genres", label: "Genres" },
   { href: "/lists", label: "Lists" },
-  { href: "/import", label: "Import" },
   { href: "/manage", label: "Manage" },
 ];
 
@@ -53,8 +52,8 @@ export default function RootLayout({
                   Practice-ready song organization
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                  Responsive library views, import review, and a dedicated
-                  reader mode for play-along sessions.
+                  Responsive library views and a dedicated reader mode for
+                  play-along sessions.
                 </p>
               </div>
 

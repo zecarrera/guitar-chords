@@ -289,9 +289,26 @@ function getEmbeddedVideoUrl(url: string) {
     return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
   }
 
-  if (hostname === "youtube.com" || hostname === "m.youtube.com") {
+  if (
+    hostname === "youtube.com" ||
+    hostname === "m.youtube.com" ||
+    hostname === "music.youtube.com" ||
+    hostname === "youtube-nocookie.com"
+  ) {
     if (parsedUrl.pathname === "/watch") {
       const videoId = parsedUrl.searchParams.get("v");
+
+      return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
+    }
+
+    if (parsedUrl.pathname.startsWith("/shorts/")) {
+      const videoId = parsedUrl.pathname.split("/").filter(Boolean)[1];
+
+      return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
+    }
+
+    if (parsedUrl.pathname.startsWith("/live/")) {
+      const videoId = parsedUrl.pathname.split("/").filter(Boolean)[1];
 
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
     }
@@ -311,9 +328,7 @@ function getEmbeddedVideoUrl(url: string) {
     return parsedUrl.toString();
   }
 
-  return parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:"
-    ? parsedUrl.toString()
-    : null;
+  return null;
 }
 
 export function AutoScrollReader({
@@ -326,6 +341,7 @@ export function AutoScrollReader({
 }: AutoScrollReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef(0);
+  const videoPlayerRef = useRef<HTMLDivElement>(null);
   const savedSpeed = useSyncExternalStore(
     subscribeToSpeedStore,
     getStoredSpeedSnapshot,
@@ -415,6 +431,17 @@ export function AutoScrollReader({
       chordName,
       left: rect.left + rect.width / 2,
       top: rect.top - 12,
+    });
+  }
+
+  function handleSelectVideo(url: string) {
+    setActiveVideoUrl(url);
+
+    window.requestAnimationFrame(() => {
+      videoPlayerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     });
   }
 
@@ -535,7 +562,10 @@ export function AutoScrollReader({
       {videoItems.length > 0 || documentUrl ? (
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           {videoItems.length > 0 ? (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+            <div
+              ref={videoPlayerRef}
+              className="rounded-3xl border border-white/10 bg-white/5 p-5"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -566,6 +596,15 @@ export function AutoScrollReader({
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
+                ) : activeVideo ? (
+                  <div className="aspect-video p-5 text-sm leading-6 text-slate-300">
+                    <p className="font-semibold text-white">{activeVideo.label}</p>
+                    <p className="mt-2">
+                      This link cannot be embedded in the in-page player. Use{" "}
+                      <span className="font-semibold text-white">Open link</span> to
+                      watch it in a new tab.
+                    </p>
+                  </div>
                 ) : (
                   <div className="aspect-video p-5 text-sm leading-6 text-slate-300">
                     <p className="font-semibold text-white">
@@ -581,10 +620,14 @@ export function AutoScrollReader({
 
               <div className="mt-4 space-y-3">
                 {videoItems.map((video) => (
-                  <div
-                    key={video.url}
-                    className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"
-                  >
+                    <div
+                      key={video.url}
+                      className={`rounded-2xl border p-4 transition ${
+                        activeVideoUrl === video.url
+                          ? "border-amber-300/40 bg-amber-300/10"
+                          : "border-white/10 bg-slate-950/40"
+                      }`}
+                    >
                     <p className="text-sm font-semibold text-white">{video.label}</p>
                     <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
                       {video.type === "tutorial" ? "Tutorial" : "Song reference"}
@@ -593,10 +636,14 @@ export function AutoScrollReader({
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => setActiveVideoUrl(video.url)}
-                        className="cursor-pointer rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-200"
+                        onClick={() => handleSelectVideo(video.url)}
+                        className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
+                          activeVideoUrl === video.url
+                            ? "bg-white/10 text-white"
+                            : "bg-amber-300 text-slate-950 hover:bg-amber-200"
+                        }`}
                       >
-                        Play here
+                        {activeVideoUrl === video.url ? "Selected" : "Play here"}
                       </button>
                       <a
                         href={video.url}
