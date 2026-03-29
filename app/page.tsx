@@ -1,34 +1,61 @@
 import Link from "next/link";
 
+import { RecentSongAccess } from "@/components/recent-song-access";
 import { getLibrarySnapshot } from "@/lib/data";
 
 export default async function Home() {
-  const { songs, source, stats } = await getLibrarySnapshot();
-  const recentSongs = songs.slice(0, 3);
+  const { artists, customLists, genres, songs } = await getLibrarySnapshot();
+  const recentSongs = [...songs]
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    .slice(0, 3);
+  const topArtists = [...artists].sort((left, right) => right.songCount - left.songCount).slice(0, 4);
+  const topLists = [...customLists].sort((left, right) => right.songCount - left.songCount).slice(0, 3);
   const quickLinks = [
     {
-      title: "Import new chord sheets",
-      href: "/import",
-      description:
-        "Review PDF uploads and external links before they become part of your library.",
-    },
-    {
-      title: "Browse song library",
+      title: "Browse songs",
       href: "/songs",
       description:
-        "Filter songs by artist, genre, custom list membership, and ingestion source.",
+        "Open the full library and jump straight into reader mode for any song.",
     },
     {
-      title: "Play along in reader mode",
-      href: songs[0] ? `/songs/${songs[0].slug}` : "/songs",
+      title: "Artists",
+      href: "/artists",
       description:
-        "Open a chord sheet, tune the auto-scroll speed, and keep tutorial links close by.",
+        "Scan the artists you keep in rotation and move quickly to the right songs.",
     },
     {
-      title: "Manage live library",
-      href: "/manage",
+      title: "Genres",
+      href: "/genres",
       description:
-        "Create songs, edit chord content, and maintain artists, genres, lists, and video links.",
+        "Use genre groupings to match the mood of a rehearsal or casual session.",
+    },
+    {
+      title: "Practice lists",
+      href: "/lists",
+      description:
+        "Open saved sets for rehearsals, events, or focused practice blocks.",
+    },
+  ];
+  const overviewStats = [
+    {
+      label: "Songs ready to play",
+      value: String(songs.length),
+      description: "Chord sheets you can open quickly from the library.",
+    },
+    {
+      label: "Artists in rotation",
+      value: String(artists.length),
+      description: "Artists grouped for faster browsing during practice.",
+    },
+    {
+      label: "Genres available",
+      value: String(genres.length),
+      description: "Styles you can use to narrow the library fast.",
+    },
+    {
+      label: "Saved practice lists",
+      value: String(customLists.length),
+      description: "Reusable sets for rehearsals and personal sessions.",
     },
   ];
 
@@ -37,38 +64,23 @@ export default async function Home() {
       <section className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/20">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
-            Personal guitar library
+            Quick access
           </p>
           <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Keep chord sheets, practice links, and play-along tools in one place.
+            Jump back into the songs you have been playing lately.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-            This MVP is designed as a single-user library optimized for Render
-            deployment. It keeps the UI responsive, treats imported content as
-            reviewable drafts, and gives every song a dedicated reader view with
-            adjustable auto-scroll.
+            Songs you open in reader mode are remembered here. If you have not
+            played enough songs yet, the remaining spots are filled with the
+            most recently added entries in your library.
           </p>
-          <p className="mt-4 inline-flex rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-300">
-            Data source: {source === "database" ? "PostgreSQL" : "demo seed"}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              className="rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
-              href="/songs"
-            >
-              Explore songs
-            </Link>
-            <Link
-              className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
-              href="/import"
-            >
-              Review import flow
-            </Link>
+          <div className="mt-8">
+            <RecentSongAccess songs={songs} />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          {stats.map((item) => (
+          {overviewStats.map((item) => (
             <div
               key={item.label}
               className="rounded-2xl border border-white/10 bg-slate-900/80 p-5"
@@ -105,10 +117,10 @@ export default async function Home() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Recently updated songs
+                Fresh in the library
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-white">
-                Ready for rehearsal
+                Recently added songs
               </h2>
             </div>
             <Link
@@ -147,34 +159,80 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-            Architecture snapshot
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            How this MVP is organized
-          </h2>
-          <ul className="mt-6 space-y-4 text-sm leading-6 text-slate-300">
-            <li>
-              <span className="font-semibold text-white">App Router UI:</span>{" "}
-              dashboard, library pages, and reader views are in `app/`.
-            </li>
-            <li>
-              <span className="font-semibold text-white">Domain model:</span>{" "}
-              Prisma models cover songs, artists, genres, custom lists, chord
-              documents, videos, and import tracking.
-            </li>
-            <li>
-              <span className="font-semibold text-white">Import pipeline:</span>{" "}
-              PDFs and external links are treated as source material that should
-              be reviewed before publishing.
-            </li>
-            <li>
-              <span className="font-semibold text-white">Reader mode:</span>{" "}
-              auto-scroll lives in a client component so users can tune speed in
-              the browser without a round trip.
-            </li>
-          </ul>
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Artists in rotation
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">
+                  Keep your regulars close
+                </h2>
+              </div>
+              <Link
+                href="/artists"
+                className="text-sm font-semibold text-amber-300 transition hover:text-amber-200"
+              >
+                Browse artists
+              </Link>
+            </div>
+            <div className="mt-6 space-y-3">
+              {topArtists.map((artist) => (
+                <div
+                  key={artist.name}
+                  className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-base font-semibold text-white">{artist.name}</p>
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
+                      {artist.songCount} song{artist.songCount === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {artist.summary}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Practice lists
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">
+                  Grab a prepared set fast
+                </h2>
+              </div>
+              <Link
+                href="/lists"
+                className="text-sm font-semibold text-amber-300 transition hover:text-amber-200"
+              >
+                Open lists
+              </Link>
+            </div>
+            <div className="mt-6 space-y-3">
+              {topLists.map((list) => (
+                <div
+                  key={list.name}
+                  className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-base font-semibold text-white">{list.name}</p>
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
+                      {list.songCount} song{list.songCount === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {list.summary}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </div>

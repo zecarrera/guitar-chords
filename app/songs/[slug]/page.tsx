@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
+import { SongPlaybackTracker } from "@/components/song-playback-tracker";
 import { getChordDefinitions, getSongBySlug, getSongs } from "@/lib/data";
 
 type SongDetailPageProps = {
@@ -51,6 +52,11 @@ export default async function SongDetailPage({
 
   return (
     <div className="space-y-6">
+      <SongPlaybackTracker
+        artist={song.artist}
+        slug={song.slug}
+        title={song.title}
+      />
       <section className="rounded-[2rem] border border-white/10 bg-slate-900/85 p-6 sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
           {song.artist}

@@ -11,6 +11,7 @@ export const songs: Song[] = [
     title: "Sunday Harbor",
     slug: "sunday-harbor",
     artist: "The Harbor Lights",
+    createdAt: "2026-03-10T09:00:00.000Z",
     genres: ["Acoustic", "Indie Folk"],
     lists: ["Warm-up Set", "Sunday Service"],
     sourceType: "pdf",
@@ -26,6 +27,7 @@ export const songs: Song[] = [
       "This sample entry demonstrates how a normalized song record can point to an uploaded PDF while still carrying its own artist, genre, and list metadata. The reader content below is original placeholder material designed for the MVP interface.",
     importNotes:
       "Imported from a clean PDF and edited to preserve section markers before publishing.",
+    updatedAt: "2026-03-12T10:15:00.000Z",
     videoLinks: [
       {
         label: "Fingerstyle walkthrough",
@@ -71,6 +73,7 @@ export const songs: Song[] = [
     title: "Midnight Lantern",
     slug: "midnight-lantern",
     artist: "Northline Avenue",
+    createdAt: "2026-03-14T18:30:00.000Z",
     genres: ["Alternative", "Pop Rock"],
     lists: ["Open Mic", "Late Night Set"],
     sourceType: "external_link",
@@ -86,6 +89,7 @@ export const songs: Song[] = [
       "This sample entry is modeled as an external-link import. The canonical source stays attached to the song record, but the searchable metadata lives in the app so filters do not depend on third-party page structure.",
     importNotes:
       "Canonical link was imported first, then the bridge and ending tags were normalized during review.",
+    updatedAt: "2026-03-16T11:00:00.000Z",
     videoLinks: [
       {
         label: "Lead guitar tutorial",
@@ -131,6 +135,7 @@ export const songs: Song[] = [
     title: "Open Highway",
     slug: "open-highway",
     artist: "Cedar Run",
+    createdAt: "2026-03-18T07:45:00.000Z",
     genres: ["Country", "Acoustic"],
     lists: ["Road Trip", "Easy Requests"],
     sourceType: "pdf",
@@ -146,6 +151,7 @@ export const songs: Song[] = [
       "This song remains in draft status to represent content that has been imported but not fully reviewed. In the finished app, draft items would be editable before being included in normal browsing views.",
     importNotes:
       "PDF import detected repeated chorus markers; review still needed before publish.",
+    updatedAt: "2026-03-19T08:20:00.000Z",
     videoLinks: [
       {
         label: "Strumming pattern lesson",

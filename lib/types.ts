@@ -25,6 +25,7 @@ export type Song = {
   title: string;
   slug: string;
   artist: string;
+  createdAt: string;
   genres: string[];
   lists: string[];
   sourceType: SourceType;
@@ -37,6 +38,7 @@ export type Song = {
   summary: string;
   description: string;
   importNotes: string;
+  updatedAt: string;
   documentUrl?: string | null;
   documentLabel?: string | null;
   videoLinks: VideoLink[];

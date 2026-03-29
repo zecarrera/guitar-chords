@@ -389,14 +389,6 @@ export function AutoScrollReader({
     };
   }, [isPlaying, speed]);
 
-  const estimatedMinutes = useMemo(() => {
-    const readingUnits = sections.reduce(
-      (total, section) => total + section.lines.length * 18,
-      0,
-    );
-
-    return Math.max(1, Math.round(readingUnits / Math.max(speed, 1) / 6));
-  }, [sections, speed]);
   const videoItems = useMemo(
     () =>
       videoLinks.map((video) => ({
@@ -457,9 +449,6 @@ export function AutoScrollReader({
             </button>
             <div className="rounded-full bg-white/5 px-4 py-3 text-sm font-medium text-slate-200">
               {speed} px/s
-            </div>
-            <div className="rounded-full bg-white/5 px-4 py-3 text-sm text-slate-300">
-              About {estimatedMinutes} minute{estimatedMinutes === 1 ? "" : "s"}
             </div>
           </div>
 

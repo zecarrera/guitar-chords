@@ -199,6 +199,7 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
       title: song.title,
       slug: song.slug,
       artist: song.artist.name,
+      createdAt: song.createdAt.toISOString(),
       genres: song.genres.map((genre) => genre.name),
       lists: song.customLists.map((list) => list.name),
       sourceType,
@@ -216,6 +217,7 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
       importNotes:
         importSource?.errorMessage ??
         `Import status: ${toTitleCase(importSource?.status ?? "completed")}.`,
+      updatedAt: song.updatedAt.toISOString(),
       documentUrl: primaryDocument
         ? primaryDocument.fileName
           ? `/api/documents/${primaryDocument.id}/file`
