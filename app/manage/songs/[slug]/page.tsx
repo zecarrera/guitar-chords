@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SongEditorPreview } from "@/components/song-editor-preview";
 import { SongDocumentFields } from "@/components/song-document-fields";
 import { getSongEditorData } from "@/lib/admin-data";
-import { isDatabaseConfigured } from "@/lib/data";
+import { getChordDefinitions, isDatabaseConfigured } from "@/lib/data";
 
 import {
   createVideoLinkAction,
@@ -30,7 +31,8 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
   }
 
   const { slug } = await params;
-  const { artists, customLists, genres, song } = await getSongEditorData(slug);
+  const [{ artists, customLists, genres, song }, chordDefinitions] =
+    await Promise.all([getSongEditorData(slug), getChordDefinitions()]);
 
   if (!song) {
     notFound();
@@ -73,167 +75,152 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
         <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-6">
           <h2 className="text-2xl font-semibold text-white">Song editor</h2>
 
-          <form
-            action={updateSongAction}
-            className="mt-6 space-y-6"
-          >
-            <input type="hidden" name="songId" value={song.id} />
-            <input type="hidden" name="documentId" value={primaryDocument?.id ?? ""} />
+          <form id="song-editor-form" action={updateSongAction} className="mt-6 space-y-6">
+              <input type="hidden" name="songId" value={song.id} />
+              <input type="hidden" name="documentId" value={primaryDocument?.id ?? ""} />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Title</span>
-                <input
-                  name="title"
-                  defaultValue={song.title}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  required
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Slug</span>
-                <input
-                  name="slug"
-                  defaultValue={song.slug}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  required
-                />
-              </label>
-            </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Title</span>
+                  <input
+                    name="title"
+                    defaultValue={song.title}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                    required
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Slug</span>
+                  <input
+                    name="slug"
+                    defaultValue={song.slug}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                    required
+                  />
+                </label>
+              </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Artist</span>
-                <select
-                  name="artistId"
-                  defaultValue={song.artistId}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                >
-                  {artists.map((artist) => (
-                    <option key={artist.id} value={artist.id}>
-                      {artist.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Status</span>
-                <select
-                  name="status"
-                  defaultValue={song.status}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                >
-                  <option value="DRAFT">DRAFT</option>
-                  <option value="PUBLISHED">PUBLISHED</option>
-                  <option value="ARCHIVED">ARCHIVED</option>
-                </select>
-              </label>
-            </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Artist</span>
+                  <select
+                    name="artistId"
+                    defaultValue={song.artistId}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  >
+                    {artists.map((artist) => (
+                      <option key={artist.id} value={artist.id}>
+                        {artist.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Status</span>
+                  <select
+                    name="status"
+                    defaultValue={song.status}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  >
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PUBLISHED">PUBLISHED</option>
+                    <option value="ARCHIVED">ARCHIVED</option>
+                  </select>
+                </label>
+              </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Key</span>
-                <input
-                  name="keySignature"
-                  defaultValue={song.keySignature ?? ""}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Capo</span>
-                <input
-                  type="number"
-                  min="0"
-                  name="capo"
-                  defaultValue={song.capo ?? ""}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-200">Tuning</span>
-                <input
-                  name="tuning"
-                  defaultValue={song.tuning ?? ""}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                />
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Key</span>
+                  <input
+                    name="keySignature"
+                    defaultValue={song.keySignature ?? ""}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Capo</span>
+                  <input
+                    type="number"
+                    min="0"
+                    name="capo"
+                    defaultValue={song.capo ?? ""}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Tuning</span>
+                  <input
+                    name="tuning"
+                    defaultValue={song.tuning ?? ""}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">
+                    Difficulty
+                  </span>
+                  <input
+                    name="difficulty"
+                    defaultValue={song.difficulty ?? ""}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  />
+                </label>
+              </div>
+
               <label className="space-y-2">
                 <span className="text-sm font-medium text-slate-200">
-                  Difficulty
+                  Notes / summary
                 </span>
-                <input
-                  name="difficulty"
-                  defaultValue={song.difficulty ?? ""}
+                <textarea
+                  name="notes"
+                  rows={3}
+                  defaultValue={song.notes ?? ""}
                   className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                 />
               </label>
-            </div>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">
-                Description
-              </span>
-              <textarea
-                name="description"
-                rows={4}
-                defaultValue={song.description ?? ""}
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-              />
-            </label>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm font-semibold text-white">Genres</p>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {genres.map((genre) => (
+                      <label
+                        key={genre.id}
+                        className="flex items-center gap-2 text-sm text-slate-200"
+                      >
+                        <input
+                          type="checkbox"
+                          name="genreIds"
+                          value={genre.id}
+                          defaultChecked={selectedGenreIds.has(genre.id)}
+                        />
+                        {genre.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">
-                Notes / summary
-              </span>
-              <textarea
-                name="notes"
-                rows={3}
-                defaultValue={song.notes ?? ""}
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-              />
-            </label>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">Genres</p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {genres.map((genre) => (
-                    <label
-                      key={genre.id}
-                      className="flex items-center gap-2 text-sm text-slate-200"
-                    >
-                      <input
-                        type="checkbox"
-                        name="genreIds"
-                        value={genre.id}
-                        defaultChecked={selectedGenreIds.has(genre.id)}
-                      />
-                      {genre.name}
-                    </label>
-                  ))}
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm font-semibold text-white">Custom lists</p>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {customLists.map((list) => (
+                      <label
+                        key={list.id}
+                        className="flex items-center gap-2 text-sm text-slate-200"
+                      >
+                        <input
+                          type="checkbox"
+                          name="listIds"
+                          value={list.id}
+                          defaultChecked={selectedListIds.has(list.id)}
+                        />
+                        {list.name}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">Custom lists</p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {customLists.map((list) => (
-                    <label
-                      key={list.id}
-                      className="flex items-center gap-2 text-sm text-slate-200"
-                    >
-                      <input
-                        type="checkbox"
-                        name="listIds"
-                        value={list.id}
-                        defaultChecked={selectedListIds.has(list.id)}
-                      />
-                      {list.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-sm font-semibold text-white">Chord document</p>
@@ -262,12 +249,31 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
                 </div>
               </div>
 
-            <button
-              type="submit"
-              className="rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950"
-            >
-              Save song
-            </button>
+              <SongEditorPreview
+                formId="song-editor-form"
+                initialTitle={song.title}
+                initialArtistId={song.artistId}
+                initialArtistName={song.artist.name}
+                initialExtractedText={primaryDocument?.extractedText ?? ""}
+                initialScrollSpeed={primaryDocument?.scrollSpeed ?? 24}
+                artistOptions={artists.map((artist) => ({
+                  id: artist.id,
+                  name: artist.name,
+                }))}
+                chordDefinitions={chordDefinitions}
+                videoLinks={song.videoLinks.map((video) => ({
+                  label: video.label,
+                  type: video.type === "TUTORIAL" ? "tutorial" : "song",
+                  url: video.url,
+                }))}
+              />
+
+              <button
+                type="submit"
+                className="rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950"
+              >
+                Save song
+              </button>
           </form>
         </div>
 

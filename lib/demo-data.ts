@@ -21,8 +21,6 @@ export const songs: Song[] = [
     difficulty: "Intermediate",
     status: "published",
     scrollSpeed: 24,
-    description:
-      "This sample entry demonstrates how a normalized song record can point to an uploaded PDF while still carrying its own artist, genre, and list metadata. The reader content below is original placeholder material designed for the MVP interface.",
     importNotes:
       "Imported from a clean PDF and edited to preserve section markers before publishing.",
     updatedAt: "2026-03-12T10:15:00.000Z",
@@ -81,8 +79,6 @@ export const songs: Song[] = [
     difficulty: "Advanced",
     status: "published",
     scrollSpeed: 30,
-    description:
-      "This sample entry is modeled as an external-link import. The canonical source stays attached to the song record, but the searchable metadata lives in the app so filters do not depend on third-party page structure.",
     importNotes:
       "Canonical link was imported first, then the bridge and ending tags were normalized during review.",
     updatedAt: "2026-03-16T11:00:00.000Z",
@@ -141,8 +137,6 @@ export const songs: Song[] = [
     difficulty: "Beginner",
     status: "draft",
     scrollSpeed: 18,
-    description:
-      "This song remains in draft status to represent content that has been imported but not fully reviewed. In the finished app, draft items would be editable before being included in normal browsing views.",
     importNotes:
       "PDF import detected repeated chorus markers; review still needed before publish.",
     updatedAt: "2026-03-19T08:20:00.000Z",

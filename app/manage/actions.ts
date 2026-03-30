@@ -301,7 +301,6 @@ export async function updateSongAction(formData: FormData) {
   const title = readRequiredString(formData, "title");
   const slugInput = readOptionalString(formData, "slug");
   const artistId = readRequiredString(formData, "artistId");
-  const description = readOptionalString(formData, "description");
   const notes = readOptionalString(formData, "notes");
   const keySignature = readOptionalString(formData, "keySignature");
   const capo = readOptionalNumber(formData, "capo");
@@ -373,7 +372,6 @@ export async function updateSongAction(formData: FormData) {
     data: {
       title,
       slug,
-      description,
       notes,
       keySignature,
       capo,

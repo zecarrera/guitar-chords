@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseChordSections } from "@/lib/chord-sections";
 import { defaultChordDefinitions, deserializeChordDefinition } from "@/lib/chord-library";
 import {
   artists as demoArtists,
@@ -50,47 +51,6 @@ function toTitleCase(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function parseChordSections(extractedText?: string | null) {
-  if (!extractedText) {
-    return [
-      {
-        title: "Chord sheet",
-        lines: ["Chord content will appear here after the document is imported."],
-      },
-    ];
-  }
-
-  const blocks = extractedText
-    .split(/\n\s*\n/g)
-    .map((block) =>
-      block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
-    )
-    .filter((block) => block.length > 0);
-
-  if (blocks.length === 0) {
-    return [
-      {
-        title: "Chord sheet",
-        lines: [extractedText],
-      },
-    ];
-  }
-
-  return blocks.map((block, index) => {
-    const [firstLine, ...rest] = block;
-    const useFirstLineAsTitle =
-      rest.length > 0 && !firstLine.includes("[") && firstLine.length <= 40;
-
-    return {
-      title: useFirstLineAsTitle ? firstLine : `Section ${index + 1}`,
-      lines: useFirstLineAsTitle ? rest : block,
-    };
-  });
 }
 
 async function buildDatabaseSnapshot(): Promise<Snapshot> {
@@ -198,10 +158,6 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
       difficulty: song.difficulty ?? "Unspecified",
       status: song.status === "PUBLISHED" ? "published" : "draft",
       scrollSpeed: primaryDocument?.scrollSpeed ?? 24,
-      description:
-        song.description ??
-        primaryDocument?.extractedText ??
-        "Imported chord sheet awaiting richer description.",
       importNotes:
         importSource?.errorMessage ??
         `Import status: ${toTitleCase(importSource?.status ?? "completed")}.`,

@@ -34,7 +34,7 @@ export async function generateMetadata({
 
   return {
     title: `${song.title} · Guitar Chords Library`,
-    description: song.description,
+    description: `${song.title} by ${song.artist} chord sheet with auto-scroll practice tools.`,
   };
 }
 
