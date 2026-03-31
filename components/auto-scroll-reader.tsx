@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -227,50 +226,95 @@ type ChordLineProps = {
   onShowChordTooltip: (chordName: string, target: HTMLElement) => void;
 };
 
+function buildPositionedChordLine(line: string) {
+  const matches = Array.from(line.matchAll(chordTokenPattern));
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  let lastIndex = 0;
+  let lyricText = "";
+  let lyricCursor = 0;
+  let minimumChordColumn = 0;
+  const chords: Array<{
+    column: number;
+    label: string;
+    name: string;
+  }> = [];
+
+  for (const match of matches) {
+    const startIndex = match.index ?? 0;
+    const before = line.slice(lastIndex, startIndex);
+    const chordLabel = match[0];
+    const chordName = match[1]?.trim();
+
+    lyricText += before;
+    lyricCursor += before.length;
+    chords.push({
+      column: Math.max(lyricCursor, minimumChordColumn),
+      label: chordLabel,
+      name: chordName,
+    });
+    minimumChordColumn = Math.max(lyricCursor, minimumChordColumn) + chordLabel.length + 1;
+    lastIndex = startIndex + chordLabel.length;
+  }
+
+  lyricText += line.slice(lastIndex);
+
+  const contentWidth = Math.max(
+    lyricText.length,
+    ...chords.map((chord) => chord.column + chord.label.length),
+  );
+
+  return {
+    chords,
+    contentWidth,
+    lyricText,
+  };
+}
+
 function ChordLine({
   line,
   onHideChordTooltip,
   onShowChordTooltip,
 }: ChordLineProps) {
-  const matches = Array.from(line.matchAll(chordTokenPattern));
+  const positionedChordLine = buildPositionedChordLine(line);
 
-  if (matches.length === 0) {
+  if (!positionedChordLine) {
     return <div className="whitespace-pre-wrap">{line}</div>;
   }
 
-  let lastIndex = 0;
-
   return (
-    <div className="whitespace-pre-wrap">
-      {matches.map((match, index) => {
-        const chordName = match[1]?.trim();
-        const startIndex = match.index ?? 0;
-        const before = line.slice(lastIndex, startIndex);
-        lastIndex = startIndex + match[0].length;
-
-        return (
-          <Fragment key={`${chordName}-${startIndex}-${index}`}>
-            {before}
-            <span className="inline-block align-baseline">
-              <button
-                type="button"
-                className="cursor-help rounded-md bg-amber-300/15 px-1.5 py-0.5 font-semibold text-amber-200 underline decoration-dotted underline-offset-4 transition hover:bg-amber-300/25 focus-visible:bg-amber-300/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-                onBlur={onHideChordTooltip}
-                onMouseEnter={(event) =>
-                  onShowChordTooltip(chordName, event.currentTarget)
-                }
-                onMouseLeave={onHideChordTooltip}
-                onFocus={(event) =>
-                  onShowChordTooltip(chordName, event.currentTarget)
-                }
-              >
-                {match[0]}
-              </button>
-            </span>
-          </Fragment>
-        );
-      })}
-      {line.slice(lastIndex)}
+    <div className="space-y-0">
+      <div
+        className="relative h-6 whitespace-pre leading-6 text-amber-200"
+        style={{ width: `${Math.max(positionedChordLine.contentWidth, 1)}ch` }}
+      >
+        {positionedChordLine.chords.map((chord, index) => (
+          <span
+            key={`${chord.name}-${chord.column}-${index}`}
+            tabIndex={0}
+            className="absolute cursor-help underline decoration-dotted underline-offset-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
+            style={{ left: `${chord.column}ch` }}
+            onBlur={onHideChordTooltip}
+            onMouseEnter={(event) =>
+              onShowChordTooltip(chord.name, event.currentTarget)
+            }
+            onMouseLeave={onHideChordTooltip}
+            onFocus={(event) =>
+              onShowChordTooltip(chord.name, event.currentTarget)
+            }
+          >
+            {chord.label}
+          </span>
+        ))}
+      </div>
+      {positionedChordLine.lyricText.trim().length > 0 ? (
+        <div className="-mt-1 whitespace-pre text-slate-100">
+          {positionedChordLine.lyricText}
+        </div>
+      ) : null}
     </div>
   );
 }

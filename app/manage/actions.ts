@@ -420,7 +420,7 @@ export async function updateSongAction(formData: FormData) {
   revalidateLibrary();
   revalidatePath(`/songs/${slug}`);
   revalidatePath(`/manage/songs/${slug}`);
-  redirect(`/manage/songs/${slug}`);
+  redirect(`/manage/songs/${slug}?saved=1`);
 }
 
 export async function deleteSongAction(formData: FormData) {

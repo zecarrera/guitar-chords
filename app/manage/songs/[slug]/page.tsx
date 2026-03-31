@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SongSaveButton } from "@/components/song-save-button";
+import { SongSaveFeedback } from "@/components/song-save-feedback";
 import { SongEditorPreview } from "@/components/song-editor-preview";
 import { SongDocumentFields } from "@/components/song-document-fields";
 import { getSongEditorData } from "@/lib/admin-data";
@@ -44,6 +46,7 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
 
   return (
     <div className="space-y-8">
+      <SongSaveFeedback />
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -268,12 +271,7 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
                 }))}
               />
 
-              <button
-                type="submit"
-                className="rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950"
-              >
-                Save song
-              </button>
+              <SongSaveButton />
           </form>
         </div>
 
