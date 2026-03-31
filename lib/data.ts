@@ -182,11 +182,9 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
     songs: mappedSongs,
     artists: artists.map((artist) => ({
       name: artist.name,
-      summary:
-        artist.bio ??
-        `${artist.name} currently has ${artist.songs.length} song${
-          artist.songs.length === 1 ? "" : "s"
-        } in the library.`,
+      summary: `${artist.name} currently has ${artist.songs.length} song${
+        artist.songs.length === 1 ? "" : "s"
+      } in the library.`,
       songCount: artist.songs.length,
       songSlugs: artist.songs.map((song) => song.slug),
     })),
@@ -199,11 +197,9 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
     })),
     customLists: customLists.map((list) => ({
       name: list.name,
-      summary:
-        list.description ??
-        `${list.name} currently contains ${list.songs.length} song${
-          list.songs.length === 1 ? "" : "s"
-        }.`,
+      summary: `${list.name} currently contains ${list.songs.length} song${
+        list.songs.length === 1 ? "" : "s"
+      }.`,
       songCount: list.songs.length,
       songs: list.songs.map((song) => song.title),
     })),

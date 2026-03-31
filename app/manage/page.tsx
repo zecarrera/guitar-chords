@@ -66,6 +66,27 @@ export default async function ManagePage() {
             </div>
           </div>
 
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href="#manage-artists"
+              className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-100 transition hover:border-amber-300/40"
+            >
+              Manage: artists
+            </a>
+            <a
+              href="#manage-lists"
+              className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-100 transition hover:border-amber-300/40"
+            >
+              Manage: lists
+            </a>
+            <a
+              href="#manage-genres"
+              className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-100 transition hover:border-amber-300/40"
+            >
+              Manage: genres
+            </a>
+          </div>
+
           <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
             <div className="grid grid-cols-[1.4fr_1fr_0.8fr_0.8fr] gap-4 border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
               <span>Song</span>
@@ -169,211 +190,218 @@ export default async function ManagePage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-3">
-        <div className={sectionCardClass()}>
+      <section className="grid gap-6">
+        <div id="manage-artists" className={sectionCardClass()}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
             Artists
           </p>
-          <div className="mt-6 space-y-4">
-            <form action={createArtistAction} className="space-y-3 rounded-2xl bg-white/5 p-4">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
+            <div className="grid grid-cols-[1fr_0.45fr_0.8fr] gap-4 border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span>Name</span>
+              <span>Songs</span>
+              <span>Actions</span>
+            </div>
+            <form
+              action={createArtistAction}
+              className="grid grid-cols-[1fr_0.45fr_0.8fr] gap-4 border-b border-white/10 bg-amber-300/5 px-4 py-4"
+            >
               <input
                 name="name"
-                placeholder="New artist name"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                placeholder="New artist"
+                className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                 required
               />
-              <textarea
-                name="bio"
-                rows={3}
-                placeholder="Optional artist summary"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-              />
-              <button
-                type="submit"
-                className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
-              >
-                Add artist
-              </button>
+              <div className="flex items-center text-sm text-slate-400">New</div>
+              <div className="flex items-start justify-start">
+                <button
+                  type="submit"
+                  className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
+                >
+                  Add row
+                </button>
+              </div>
             </form>
-
-            {artists.map((artist) => (
-              <div key={artist.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <form action={updateArtistAction} className="space-y-3">
+            <div className="divide-y divide-white/10">
+              {artists.map((artist) => (
+                <form
+                  key={artist.id}
+                  action={updateArtistAction}
+                  className="grid grid-cols-[1fr_0.45fr_0.8fr] gap-4 px-4 py-4"
+                >
                   <input type="hidden" name="id" value={artist.id} />
                   <input
                     name="name"
                     defaultValue={artist.name}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                    className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                     required
                   />
-                  <textarea
-                    name="bio"
-                    rows={3}
-                    defaultValue={artist.bio ?? ""}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                  />
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-slate-400">
-                      {artist._count.songs} song
-                      {artist._count.songs === 1 ? "" : "s"}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-100"
-                      >
-                        Save
-                      </button>
-                    </div>
+                  <div className="flex items-center text-sm text-slate-300">
+                    {artist._count.songs}
                   </div>
-                </form>
-                {artist._count.songs === 0 ? (
-                  <form action={deleteArtistAction} className="mt-3">
-                    <input type="hidden" name="id" value={artist.id} />
+                  <div className="flex items-start justify-start gap-2">
                     <button
                       type="submit"
-                      className="rounded-full border border-rose-400/30 px-3 py-1 text-xs font-semibold text-rose-200"
+                      className="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
                     >
-                      Delete artist
+                      Save
                     </button>
-                  </form>
-                ) : null}
-              </div>
-            ))}
+                    <button
+                      type="submit"
+                      formAction={deleteArtistAction}
+                      disabled={artist._count.songs > 0}
+                      className="rounded-full border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </form>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className={sectionCardClass()}>
+        <div id="manage-genres" className={sectionCardClass()}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
             Genres
           </p>
-          <div className="mt-6 space-y-4">
-            <form action={createGenreAction} className="space-y-3 rounded-2xl bg-white/5 p-4">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
+            <div className="grid grid-cols-[1fr_0.45fr_0.8fr] gap-4 border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span>Name</span>
+              <span>Songs</span>
+              <span>Actions</span>
+            </div>
+            <form
+              action={createGenreAction}
+              className="grid grid-cols-[1fr_0.45fr_0.8fr] gap-4 border-b border-white/10 bg-amber-300/5 px-4 py-4"
+            >
               <input
                 name="name"
-                placeholder="New genre name"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                placeholder="New genre"
+                className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                 required
               />
-              <button
-                type="submit"
-                className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
-              >
-                Add genre
-              </button>
+              <div className="flex items-center text-sm text-slate-400">New</div>
+              <div className="flex items-start justify-start">
+                <button
+                  type="submit"
+                  className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
+                >
+                  Add row
+                </button>
+              </div>
             </form>
-
-            {genres.map((genre) => (
-              <div key={genre.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <form action={updateGenreAction} className="space-y-3">
+            <div className="divide-y divide-white/10">
+              {genres.map((genre) => (
+                <form
+                  key={genre.id}
+                  action={updateGenreAction}
+                  className="grid grid-cols-[1fr_0.45fr_0.8fr] gap-4 px-4 py-4"
+                >
                   <input type="hidden" name="id" value={genre.id} />
                   <input
                     name="name"
                     defaultValue={genre.name}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                    className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                     required
                   />
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-slate-400">
-                      {genre._count.songs} song
-                      {genre._count.songs === 1 ? "" : "s"}
-                    </p>
+                  <div className="flex items-center text-sm text-slate-300">
+                    {genre._count.songs}
+                  </div>
+                  <div className="flex items-start justify-start gap-2">
                     <button
                       type="submit"
-                      className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-100"
+                      className="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
                     >
                       Save
                     </button>
+                    <button
+                      type="submit"
+                      formAction={deleteGenreAction}
+                      className="rounded-full border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </form>
-                <form action={deleteGenreAction} className="mt-3">
-                  <input type="hidden" name="id" value={genre.id} />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-rose-400/30 px-3 py-1 text-xs font-semibold text-rose-200"
-                  >
-                    Delete genre
-                  </button>
-                </form>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className={sectionCardClass()}>
+        <div id="manage-lists" className={sectionCardClass()}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
             Custom lists
           </p>
-          <div className="mt-6 space-y-4">
-            <form action={createCustomListAction} className="space-y-3 rounded-2xl bg-white/5 p-4">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
+            <div className="grid grid-cols-[1fr_0.5fr_0.45fr_0.8fr] gap-4 border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span>Name</span>
+              <span>Pinned</span>
+              <span>Songs</span>
+              <span>Actions</span>
+            </div>
+            <form
+              action={createCustomListAction}
+              className="grid grid-cols-[1fr_0.5fr_0.45fr_0.8fr] gap-4 border-b border-white/10 bg-amber-300/5 px-4 py-4"
+            >
               <input
                 name="name"
-                placeholder="New list name"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                placeholder="New list"
+                className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                 required
-              />
-              <textarea
-                name="description"
-                rows={3}
-                placeholder="Optional list description"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
               />
               <label className="flex items-center gap-2 text-sm text-slate-200">
                 <input type="checkbox" name="isPinned" />
-                Pin this list
+                Pin
               </label>
-              <button
-                type="submit"
-                className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
-              >
-                Add list
-              </button>
+              <div className="flex items-center text-sm text-slate-400">New</div>
+              <div className="flex items-start justify-start">
+                <button
+                  type="submit"
+                  className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
+                >
+                  Add row
+                </button>
+              </div>
             </form>
-
-            {customLists.map((list) => (
-              <div key={list.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <form action={updateCustomListAction} className="space-y-3">
+            <div className="divide-y divide-white/10">
+              {customLists.map((list) => (
+                <form
+                  key={list.id}
+                  action={updateCustomListAction}
+                  className="grid grid-cols-[1fr_0.5fr_0.45fr_0.8fr] gap-4 px-4 py-4"
+                >
                   <input type="hidden" name="id" value={list.id} />
                   <input
                     name="name"
                     defaultValue={list.name}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                    className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                     required
-                  />
-                  <textarea
-                    name="description"
-                    rows={3}
-                    defaultValue={list.description ?? ""}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
                   />
                   <label className="flex items-center gap-2 text-sm text-slate-200">
                     <input type="checkbox" name="isPinned" defaultChecked={list.isPinned} />
-                    Pin this list
+                    Pin
                   </label>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-slate-400">
-                      {list._count.songs} song
-                      {list._count.songs === 1 ? "" : "s"}
-                    </p>
+                  <div className="flex items-center text-sm text-slate-300">
+                    {list._count.songs}
+                  </div>
+                  <div className="flex items-start justify-start gap-2">
                     <button
                       type="submit"
-                      className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-100"
+                      className="rounded-full border border-white/10 px-3 py-2 text-xs font-semibold text-slate-100"
                     >
                       Save
                     </button>
+                    <button
+                      type="submit"
+                      formAction={deleteCustomListAction}
+                      className="rounded-full border border-rose-400/30 px-3 py-2 text-xs font-semibold text-rose-200"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </form>
-                <form action={deleteCustomListAction} className="mt-3">
-                  <input type="hidden" name="id" value={list.id} />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-rose-400/30 px-3 py-1 text-xs font-semibold text-rose-200"
-                  >
-                    Delete list
-                  </button>
-                </form>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>

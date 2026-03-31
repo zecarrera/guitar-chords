@@ -1,0 +1,1 @@
+ALTER TABLE "Artist" DROP COLUMN "bio";

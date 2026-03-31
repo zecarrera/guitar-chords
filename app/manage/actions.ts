@@ -81,13 +81,11 @@ function revalidateLibrary() {
 
 export async function createArtistAction(formData: FormData) {
   const name = readRequiredString(formData, "name");
-  const bio = readOptionalString(formData, "bio");
 
   await prisma.artist.create({
     data: {
       name,
       slug: slugify(name),
-      bio,
     },
   });
 
@@ -98,7 +96,6 @@ export async function createArtistAction(formData: FormData) {
 export async function updateArtistAction(formData: FormData) {
   const id = readRequiredString(formData, "id");
   const name = readRequiredString(formData, "name");
-  const bio = readOptionalString(formData, "bio");
 
   await prisma.artist.update({
     where: {
@@ -107,7 +104,6 @@ export async function updateArtistAction(formData: FormData) {
     data: {
       name,
       slug: slugify(name),
-      bio,
     },
   });
 
@@ -192,14 +188,12 @@ export async function deleteGenreAction(formData: FormData) {
 
 export async function createCustomListAction(formData: FormData) {
   const name = readRequiredString(formData, "name");
-  const description = readOptionalString(formData, "description");
   const isPinned = formData.get("isPinned") === "on";
 
   await prisma.customList.create({
     data: {
       name,
       slug: slugify(name),
-      description,
       isPinned,
     },
   });
@@ -211,7 +205,6 @@ export async function createCustomListAction(formData: FormData) {
 export async function updateCustomListAction(formData: FormData) {
   const id = readRequiredString(formData, "id");
   const name = readRequiredString(formData, "name");
-  const description = readOptionalString(formData, "description");
   const isPinned = formData.get("isPinned") === "on";
 
   await prisma.customList.update({
@@ -221,7 +214,6 @@ export async function updateCustomListAction(formData: FormData) {
     data: {
       name,
       slug: slugify(name),
-      description,
       isPinned,
     },
   });

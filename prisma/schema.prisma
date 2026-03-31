@@ -36,7 +36,6 @@ model Artist {
   id        String   @id @default(cuid())
   name      String   @unique
   slug      String   @unique
-  bio       String?
   songs     Song[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -52,14 +51,13 @@ model Genre {
 }
 
 model CustomList {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  isPinned    Boolean  @default(false)
-  songs       Song[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  isPinned  Boolean  @default(false)
+  songs     Song[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Song {
