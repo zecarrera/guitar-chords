@@ -63,27 +63,22 @@ button:disabled {
 }
 
 @media (max-width: 639px) {
-  html[data-song-view="true"] .site-header {
+  .site-header {
     padding: 0.75rem 0.875rem;
   }
 
-  html[data-song-view="true"] .site-header-copy {
+  .site-header-copy {
     display: flex;
     align-items: center;
     min-height: 1.5rem;
   }
 
-  html[data-song-view="true"] .site-header-brand {
+  .site-header-brand {
     font-size: 1rem;
     letter-spacing: 0.16em;
   }
 
-  html[data-song-view="true"] .site-header-heading,
-  html[data-song-view="true"] .site-header-description {
-    display: none;
-  }
-
-  html[data-song-view="true"] .site-header-nav {
+  .site-header-nav {
     margin-top: 0;
   }
 

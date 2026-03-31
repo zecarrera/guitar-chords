@@ -50,16 +50,21 @@ export default function RootLayout({
           <header className="site-header rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 shadow-2xl shadow-black/20 backdrop-blur sm:rounded-3xl sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="site-header-copy">
-                <p className="site-header-brand text-sm font-semibold uppercase tracking-[0.25em] text-amber-300">
+                <p className="site-header-brand text-sm font-semibold uppercase tracking-[0.25em] text-amber-300 sm:hidden">
                   Guitar chords
                 </p>
-                <h1 className="site-header-heading mt-2 text-2xl font-semibold text-white">
-                  Practice-ready song organization
-                </h1>
-                <p className="site-header-description mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                  Responsive library views and a dedicated reader mode for
-                  play-along sessions.
-                </p>
+                <div className="hidden sm:block">
+                  <p className="site-header-brand text-sm font-semibold uppercase tracking-[0.25em] text-amber-300">
+                    Guitar chords
+                  </p>
+                  <h1 className="site-header-heading mt-2 text-2xl font-semibold text-white">
+                    Practice-ready song organization
+                  </h1>
+                  <p className="site-header-description mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                    Responsive library views and a dedicated reader mode for
+                    play-along sessions.
+                  </p>
+                </div>
               </div>
 
               <nav className="site-header-nav flex flex-wrap gap-2">
