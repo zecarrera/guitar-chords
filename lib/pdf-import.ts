@@ -9,7 +9,7 @@ type PdfParseResult = {
 const chordLinePattern =
   /(^|\s)([A-G](?:#|b)?(?:m|maj|min|sus|add|dim|aug)?(?:\d+)?(?:\/[A-G](?:#|b)?)?)(?=\s|$)/g;
 
-function normalizeExtractedPdfText(value: string) {
+function normalizeChordDocumentTextLayout(value: string) {
   return value
     .replace(/\r\n?/g, "\n")
     .replace(/\u00a0/g, " ")
@@ -44,15 +44,17 @@ function autoBracketExtractedChords(value: string) {
     .join("\n");
 }
 
+export function normalizeChordDocumentText(value: string) {
+  return autoBracketExtractedChords(normalizeChordDocumentTextLayout(value));
+}
+
 export async function extractChordTextFromPdf(fileData: Buffer) {
   const require = createRequire(import.meta.url);
   const pdfParse = require("pdf-parse/lib/pdf-parse.js") as (
     dataBuffer: Buffer,
   ) => Promise<PdfParseResult>;
   const result = await pdfParse(fileData);
-  const normalizedText = autoBracketExtractedChords(
-    normalizeExtractedPdfText(result.text),
-  );
+  const normalizedText = normalizeChordDocumentText(result.text);
 
   return normalizedText || null;
 }

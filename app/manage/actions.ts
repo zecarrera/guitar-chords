@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { extractChordTextFromPdf } from "@/lib/pdf-import";
+import { extractChordTextFromPdf, normalizeChordDocumentText } from "@/lib/pdf-import";
 import { prisma } from "@/lib/prisma";
 
 function readRequiredString(formData: FormData, key: string) {
@@ -250,7 +250,7 @@ export async function createSongAction(formData: FormData) {
       ? readRequiredString(formData, "sourceUrl")
       : null;
   const extractedText =
-    manualExtractedText ??
+    (manualExtractedText ? normalizeChordDocumentText(manualExtractedText) : null) ??
     (normalizedSourceType === "PDF" && pdfUpload
       ? await extractChordTextFromPdf(pdfUpload.fileData)
       : null);
