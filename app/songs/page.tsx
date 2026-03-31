@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { getSongs } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+
 export default async function SongsPage() {
   const songs = await getSongs();
 
