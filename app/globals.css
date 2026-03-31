@@ -89,10 +89,12 @@ button:disabled {
 
   html[data-song-view="true"][data-song-player-active="true"] .site-shell {
     padding-top: 0;
+    padding-bottom: 0;
   }
 
   html[data-song-view="true"][data-song-player-active="true"] .site-main {
     padding-top: 0;
+    padding-bottom: 0;
   }
 
   html[data-song-view="true"][data-song-player-active="true"] .site-header,
