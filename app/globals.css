@@ -61,3 +61,43 @@ select {
 button:disabled {
   cursor: not-allowed;
 }
+
+@media (max-width: 639px) {
+  html[data-song-view="true"] .site-header {
+    padding: 0.75rem 0.875rem;
+  }
+
+  html[data-song-view="true"] .site-header-copy {
+    display: flex;
+    align-items: center;
+    min-height: 1.5rem;
+  }
+
+  html[data-song-view="true"] .site-header-brand {
+    font-size: 1rem;
+    letter-spacing: 0.16em;
+  }
+
+  html[data-song-view="true"] .site-header-heading,
+  html[data-song-view="true"] .site-header-description {
+    display: none;
+  }
+
+  html[data-song-view="true"] .site-header-nav {
+    margin-top: 0;
+  }
+
+  html[data-song-view="true"][data-song-player-active="true"] .site-shell {
+    padding-top: 0;
+  }
+
+  html[data-song-view="true"][data-song-player-active="true"] .site-main {
+    padding-top: 0;
+  }
+
+  html[data-song-view="true"][data-song-player-active="true"] .site-header,
+  html[data-song-view="true"][data-song-player-active="true"] .song-page-summary,
+  html[data-song-view="true"][data-song-player-active="true"] .site-footer {
+    display: none;
+  }
+}

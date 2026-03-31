@@ -13,6 +13,7 @@ import type { ChordDefinition, ChordSection, VideoLink } from "@/lib/types";
 
 type AutoScrollReaderProps = {
   chordDefinitions?: ChordDefinition[];
+  controlsPageChrome?: boolean;
   defaultSpeed: number;
   sections: ChordSection[];
   videoLinks?: VideoLink[];
@@ -380,6 +381,7 @@ function getEmbeddedVideoUrl(url: string) {
 
 export function AutoScrollReader({
   chordDefinitions = [],
+  controlsPageChrome = false,
   defaultSpeed,
   sections,
   videoLinks = [],
@@ -396,6 +398,7 @@ export function AutoScrollReader({
   );
   const [manualSpeed, setManualSpeed] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlayModeActive, setIsPlayModeActive] = useState(false);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState<{
     width: number;
@@ -450,6 +453,24 @@ export function AutoScrollReader({
       window.visualViewport?.removeEventListener("resize", updateViewportSize);
     };
   }, []);
+
+  useEffect(() => {
+    if (!controlsPageChrome) {
+      return;
+    }
+
+    const root = document.documentElement;
+
+    if (isPlayModeActive) {
+      root.dataset.songPlayerActive = "true";
+    } else {
+      delete root.dataset.songPlayerActive;
+    }
+
+      return () => {
+        delete root.dataset.songPlayerActive;
+      };
+  }, [controlsPageChrome, isPlayModeActive]);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -544,7 +565,10 @@ export function AutoScrollReader({
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               type="button"
-              onClick={() => setIsPlaying((playing) => !playing)}
+              onClick={() => {
+                setIsPlayModeActive(true);
+                setIsPlaying((playing) => !playing);
+              }}
               className="inline-flex min-w-0 cursor-pointer items-center justify-center rounded-full bg-amber-300 px-4 py-2.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-200 sm:min-w-32 sm:px-5 sm:py-3 sm:text-sm"
             >
               {isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
@@ -553,6 +577,7 @@ export function AutoScrollReader({
               type="button"
               onClick={() => {
                 setIsPlaying(false);
+                setIsPlayModeActive(false);
                 scrollPositionRef.current = 0;
                 containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
               }}

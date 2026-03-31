@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
 import { SongPlaybackTracker } from "@/components/song-playback-tracker";
+import { SongViewChrome } from "@/components/song-view-chrome";
 import { getChordDefinitions, getSongBySlug, getSongs } from "@/lib/data";
 
 type SongDetailPageProps = {
@@ -53,12 +54,13 @@ export default async function SongDetailPage({
 
   return (
     <div className="space-y-6">
+      <SongViewChrome />
       <SongPlaybackTracker
         artist={song.artist}
         slug={song.slug}
         title={song.title}
       />
-      <section className="rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 sm:rounded-[2rem] sm:p-8">
+      <section className="song-page-summary rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 sm:rounded-[2rem] sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
@@ -80,6 +82,7 @@ export default async function SongDetailPage({
 
       <AutoScrollReader
         chordDefinitions={chordDefinitions}
+        controlsPageChrome
         defaultSpeed={song.scrollSpeed}
         sections={song.sections}
         videoLinks={song.videoLinks}

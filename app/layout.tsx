@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
+import { SiteFooter } from "@/components/site-footer";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,25 +44,25 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-slate-950 text-slate-100">
         <div
-          className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-2 py-4 sm:px-6 sm:py-6 lg:px-8"
+          className="site-shell mx-auto flex min-h-screen w-full max-w-7xl flex-col px-2 py-4 sm:px-6 sm:py-6 lg:px-8"
           style={{ minHeight: "100dvh" }}
         >
-          <header className="rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 shadow-2xl shadow-black/20 backdrop-blur sm:rounded-3xl sm:p-5">
+          <header className="site-header rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 shadow-2xl shadow-black/20 backdrop-blur sm:rounded-3xl sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-300">
+              <div className="site-header-copy">
+                <p className="site-header-brand text-sm font-semibold uppercase tracking-[0.25em] text-amber-300">
                   Guitar chords
                 </p>
-                <h1 className="mt-2 text-2xl font-semibold text-white">
+                <h1 className="site-header-heading mt-2 text-2xl font-semibold text-white">
                   Practice-ready song organization
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                <p className="site-header-description mt-2 max-w-2xl text-sm leading-6 text-slate-300">
                   Responsive library views and a dedicated reader mode for
                   play-along sessions.
                 </p>
               </div>
 
-              <nav className="flex flex-wrap gap-2">
+              <nav className="site-header-nav flex flex-wrap gap-2">
                 {navigation.map((item) => (
                   <Link
                     key={item.href}
@@ -74,12 +76,9 @@ export default function RootLayout({
             </div>
           </header>
 
-          <main className="flex-1 py-6 sm:py-8">{children}</main>
+          <main className="site-main flex-1 py-6 sm:py-8">{children}</main>
 
-          <footer className="border-t border-white/10 py-6 text-sm text-slate-400">
-            Built for a single-user MVP on Render with PostgreSQL, Prisma, and
-            object storage for imported PDFs.
-          </footer>
+          <SiteFooter />
         </div>
       </body>
     </html>
