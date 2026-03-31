@@ -99,7 +99,8 @@ button:disabled {
 
   html[data-song-view="true"][data-song-player-active="true"] .site-header,
   html[data-song-view="true"][data-song-player-active="true"] .song-page-summary,
-  html[data-song-view="true"][data-song-player-active="true"] .site-footer {
+  html[data-song-view="true"][data-song-player-active="true"] .site-footer,
+  html[data-song-view="true"][data-song-player-active="true"] .song-source-document {
     display: none;
   }
 }

@@ -554,13 +554,13 @@ export function AutoScrollReader({
 
   return (
     <section
-      className={`grid gap-6 ${
+      className={`min-w-0 grid gap-6 ${
         videoItems.length > 0 || documentUrl
           ? "xl:grid-cols-[minmax(0,1fr)_22rem]"
           : ""
       }`}
     >
-      <div className="rounded-[2rem] border border-white/10 bg-slate-900/90 shadow-2xl shadow-black/20">
+      <div className="min-w-0 rounded-[2rem] border border-white/10 bg-slate-900/90 shadow-2xl shadow-black/20">
         <div className="border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur sm:px-6">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
@@ -594,7 +594,7 @@ export function AutoScrollReader({
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Scroll speed
             </span>
-            <div className="mt-3 flex items-center gap-2 sm:gap-3">
+            <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => updateSpeed(speed - speedButtonStep)}
@@ -604,7 +604,7 @@ export function AutoScrollReader({
                 -
               </button>
               <input
-                className="w-full cursor-pointer accent-amber-300"
+                className="min-w-0 w-full cursor-pointer accent-amber-300"
                 type="range"
                 min={minimumScrollSpeed}
                 max={maximumScrollSpeed}
@@ -631,17 +631,17 @@ export function AutoScrollReader({
             scrollPositionRef.current = event.currentTarget.scrollTop;
           }}
           style={readerHeightStyle}
-          className="h-[70vh] space-y-4 overflow-y-auto px-3 py-4 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:py-6 lg:h-[78vh]"
+          className="min-w-0 h-[70vh] space-y-4 overflow-y-auto px-3 py-4 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:py-6 lg:h-[78vh]"
         >
           {sections.map((section, index) => (
             <div
               key={`${section.title}-${index}`}
-              className="rounded-3xl border border-white/8 bg-slate-950/70 p-4 sm:p-6"
+              className="min-w-0 rounded-3xl border border-white/8 bg-slate-950/70 p-4 sm:p-6"
             >
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
                 {section.title}
               </h3>
-              <div className="mt-3 space-y-0.5 overflow-x-auto font-mono text-[12px] leading-6 text-slate-100 sm:mt-4 sm:space-y-1 sm:text-[15px] sm:leading-7 lg:text-base lg:leading-8">
+              <div className="mt-3 min-w-0 max-w-full space-y-0.5 overflow-x-auto font-mono text-[12px] leading-6 text-slate-100 sm:mt-4 sm:space-y-1 sm:text-[15px] sm:leading-7 lg:text-base lg:leading-8">
                 {section.lines.map((line, lineIndex) => (
                   <ChordLine
                     key={`${section.title}-${index}-line-${lineIndex}`}
@@ -773,7 +773,7 @@ export function AutoScrollReader({
           ) : null}
 
           {documentUrl ? (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+            <div className="song-source-document rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                 Source document
               </p>
