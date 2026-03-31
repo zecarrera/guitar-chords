@@ -58,7 +58,7 @@ export default async function SongDetailPage({
         slug={song.slug}
         title={song.title}
       />
-      <section className="rounded-[2rem] border border-white/10 bg-slate-900/85 p-6 sm:p-8">
+      <section className="rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 sm:rounded-[2rem] sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">

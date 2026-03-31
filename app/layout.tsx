@@ -41,8 +41,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-slate-950 text-slate-100">
-        <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-          <header className="rounded-3xl border border-white/10 bg-slate-900/85 p-5 shadow-2xl shadow-black/20 backdrop-blur">
+        <div
+          className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-2 py-4 sm:px-6 sm:py-6 lg:px-8"
+          style={{ minHeight: "100dvh" }}
+        >
+          <header className="rounded-[1.75rem] border border-white/10 bg-slate-900/85 p-4 shadow-2xl shadow-black/20 backdrop-blur sm:rounded-3xl sm:p-5">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-300">
@@ -71,7 +74,7 @@ export default function RootLayout({
             </div>
           </header>
 
-          <main className="flex-1 py-8">{children}</main>
+          <main className="flex-1 py-6 sm:py-8">{children}</main>
 
           <footer className="border-t border-white/10 py-6 text-sm text-slate-400">
             Built for a single-user MVP on Render with PostgreSQL, Prisma, and

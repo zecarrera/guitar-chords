@@ -288,8 +288,11 @@ function ChordLine({
   return (
     <div className="space-y-0">
       <div
-        className="relative h-6 whitespace-pre leading-6 text-amber-200"
-        style={{ width: `${Math.max(positionedChordLine.contentWidth, 1)}ch` }}
+        className="relative whitespace-pre text-amber-200 leading-[1.5]"
+        style={{
+          width: `${Math.max(positionedChordLine.contentWidth, 1)}ch`,
+          height: "1.5em",
+        }}
       >
         {positionedChordLine.chords.map((chord, index) => (
           <span
@@ -311,7 +314,7 @@ function ChordLine({
         ))}
       </div>
       {positionedChordLine.lyricText.trim().length > 0 ? (
-        <div className="-mt-1 whitespace-pre text-slate-100">
+        <div className="-mt-[0.2em] whitespace-pre text-slate-100 leading-[1.5]">
           {positionedChordLine.lyricText}
         </div>
       ) : null}
@@ -394,12 +397,27 @@ export function AutoScrollReader({
   const [manualSpeed, setManualSpeed] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [viewportSize, setViewportSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const [activeChordTooltip, setActiveChordTooltip] = useState<{
     chordName: string;
     left: number;
     top: number;
   } | null>(null);
   const speed = manualSpeed ?? savedSpeed ?? defaultSpeed;
+  const readerViewportRatio =
+    viewportSize && viewportSize.width >= 1024
+      ? 0.78
+      : viewportSize && viewportSize.width >= 640
+        ? 0.74
+        : 0.7;
+  const readerHeightStyle = viewportSize
+    ? {
+        height: `${Math.max(320, Math.round(viewportSize.height * readerViewportRatio))}px`,
+      }
+    : undefined;
 
   function updateSpeed(nextSpeed: number) {
     setManualSpeed(clampScrollSpeed(nextSpeed));
@@ -408,6 +426,30 @@ export function AutoScrollReader({
   useEffect(() => {
     window.localStorage.setItem(storageKey, String(speed));
   }, [speed]);
+
+  useEffect(() => {
+    function updateViewportSize() {
+      const visualViewport = window.visualViewport;
+
+      setViewportSize({
+        width: Math.round(visualViewport?.width ?? window.innerWidth),
+        height: Math.round(visualViewport?.height ?? window.innerHeight),
+      });
+      setActiveChordTooltip(null);
+    }
+
+    updateViewportSize();
+
+    window.addEventListener("resize", updateViewportSize);
+    window.addEventListener("orientationchange", updateViewportSize);
+    window.visualViewport?.addEventListener("resize", updateViewportSize);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportSize);
+      window.removeEventListener("orientationchange", updateViewportSize);
+      window.visualViewport?.removeEventListener("resize", updateViewportSize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -499,11 +541,11 @@ export function AutoScrollReader({
     >
       <div className="rounded-[2rem] border border-white/10 bg-slate-900/90 shadow-2xl shadow-black/20">
         <div className="border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur sm:px-6">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setIsPlaying((playing) => !playing)}
-              className="inline-flex min-w-32 cursor-pointer items-center justify-center rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
+              className="inline-flex min-w-0 cursor-pointer items-center justify-center rounded-full bg-amber-300 px-4 py-2.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-200 sm:min-w-32 sm:px-5 sm:py-3 sm:text-sm"
             >
               {isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
             </button>
@@ -514,11 +556,11 @@ export function AutoScrollReader({
                 scrollPositionRef.current = 0;
                 containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="inline-flex min-w-24 cursor-pointer items-center justify-center rounded-full border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+              className="inline-flex min-w-0 cursor-pointer items-center justify-center rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:min-w-24 sm:py-3 sm:text-sm"
             >
               Stop
             </button>
-            <div className="rounded-full bg-white/5 px-4 py-3 text-sm font-medium text-slate-200">
+            <div className="rounded-full bg-white/5 px-3 py-2.5 text-xs font-medium text-slate-200 sm:px-4 sm:py-3 sm:text-sm">
               {speed} px/s
             </div>
           </div>
@@ -527,11 +569,11 @@ export function AutoScrollReader({
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               Scroll speed
             </span>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-3 flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => updateSpeed(speed - speedButtonStep)}
-                className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
                 aria-label="Decrease scroll speed"
               >
                 -
@@ -548,7 +590,7 @@ export function AutoScrollReader({
               <button
                 type="button"
                 onClick={() => updateSpeed(speed + speedButtonStep)}
-                className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
                 aria-label="Increase scroll speed"
               >
                 +
@@ -563,17 +605,18 @@ export function AutoScrollReader({
             hideChordTooltip();
             scrollPositionRef.current = event.currentTarget.scrollTop;
           }}
-          className="h-[70vh] space-y-6 overflow-y-auto px-4 py-5 sm:h-[74vh] sm:px-6 sm:py-6 lg:h-[78vh]"
+          style={readerHeightStyle}
+          className="h-[70vh] space-y-4 overflow-y-auto px-3 py-4 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:py-6 lg:h-[78vh]"
         >
           {sections.map((section, index) => (
             <div
               key={`${section.title}-${index}`}
-              className="rounded-3xl border border-white/8 bg-slate-950/70 p-5 sm:p-6"
+              className="rounded-3xl border border-white/8 bg-slate-950/70 p-4 sm:p-6"
             >
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
                 {section.title}
               </h3>
-              <div className="mt-4 space-y-1 overflow-x-auto font-mono text-base leading-8 text-slate-100">
+              <div className="mt-3 space-y-0.5 overflow-x-auto font-mono text-[12px] leading-6 text-slate-100 sm:mt-4 sm:space-y-1 sm:text-[15px] sm:leading-7 lg:text-base lg:leading-8">
                 {section.lines.map((line, lineIndex) => (
                   <ChordLine
                     key={`${section.title}-${index}-line-${lineIndex}`}
