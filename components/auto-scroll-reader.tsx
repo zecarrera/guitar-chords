@@ -21,16 +21,25 @@ type AutoScrollReaderProps = {
   documentUrl?: string | null;
 };
 
-const storageKey = "guitar-chords:auto-scroll-speed";
+const speedStorageKey = "guitar-chords:auto-scroll-speed";
+const fontScaleStorageKey = "guitar-chords:reader-font-scale";
 const chordTokenPattern = /\[([^[\]]+)\]/g;
 const guitarStrings = ["E", "A", "D", "G", "B", "e"];
 const minimumScrollSpeed = 6;
 const maximumScrollSpeed = 120;
 const speedSliderStep = 1;
 const speedButtonStep = 1;
+const defaultFontScale = 100;
+const minimumFontScale = 80;
+const maximumFontScale = 150;
+const fontScaleStep = 5;
 
 function clampScrollSpeed(value: number) {
   return Math.min(maximumScrollSpeed, Math.max(minimumScrollSpeed, Math.round(value)));
+}
+
+function clampFontScale(value: number) {
+  return Math.min(maximumFontScale, Math.max(minimumFontScale, Math.round(value)));
 }
 
 function subscribeToSpeedStore() {
@@ -38,7 +47,7 @@ function subscribeToSpeedStore() {
 }
 
 function getStoredSpeedSnapshot() {
-  const storedSpeed = window.localStorage.getItem(storageKey);
+  const storedSpeed = window.localStorage.getItem(speedStorageKey);
 
   if (!storedSpeed) {
     return null;
@@ -50,6 +59,22 @@ function getStoredSpeedSnapshot() {
 }
 
 function getServerSpeedSnapshot() {
+  return null;
+}
+
+function getStoredFontScaleSnapshot() {
+  const storedFontScale = window.localStorage.getItem(fontScaleStorageKey);
+
+  if (!storedFontScale) {
+    return null;
+  }
+
+  const parsedFontScale = Number(storedFontScale);
+
+  return Number.isFinite(parsedFontScale) ? clampFontScale(parsedFontScale) : null;
+}
+
+function getServerFontScaleSnapshot() {
   return null;
 }
 
@@ -396,7 +421,13 @@ export function AutoScrollReader({
     getStoredSpeedSnapshot,
     getServerSpeedSnapshot,
   );
+  const savedFontScale = useSyncExternalStore(
+    subscribeToSpeedStore,
+    getStoredFontScaleSnapshot,
+    getServerFontScaleSnapshot,
+  );
   const [manualSpeed, setManualSpeed] = useState<number | null>(null);
+  const [manualFontScale, setManualFontScale] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayModeActive, setIsPlayModeActive] = useState(false);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
@@ -410,6 +441,7 @@ export function AutoScrollReader({
     top: number;
   } | null>(null);
   const speed = manualSpeed ?? savedSpeed ?? defaultSpeed;
+  const fontScale = manualFontScale ?? savedFontScale ?? defaultFontScale;
   const readerViewportRatio =
     viewportSize && viewportSize.width >= 1024
       ? 0.78
@@ -421,14 +453,26 @@ export function AutoScrollReader({
         height: `${Math.max(320, Math.round(viewportSize.height * readerViewportRatio))}px`,
       }
     : undefined;
+  const readerTypographyStyle = {
+    fontSize: `calc(var(--reader-font-size) * ${fontScale / 100})`,
+    lineHeight: `calc(var(--reader-line-height) * ${fontScale / 100})`,
+  };
 
   function updateSpeed(nextSpeed: number) {
     setManualSpeed(clampScrollSpeed(nextSpeed));
   }
 
+  function updateFontScale(nextFontScale: number) {
+    setManualFontScale(clampFontScale(nextFontScale));
+  }
+
   useEffect(() => {
-    window.localStorage.setItem(storageKey, String(speed));
+    window.localStorage.setItem(speedStorageKey, String(speed));
   }, [speed]);
+
+  useEffect(() => {
+    window.localStorage.setItem(fontScaleStorageKey, String(fontScale));
+  }, [fontScale]);
 
   useEffect(() => {
     function updateViewportSize() {
@@ -622,6 +666,44 @@ export function AutoScrollReader({
               </button>
             </div>
           </label>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Lyrics size
+            </span>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="rounded-full bg-white/5 px-3 py-2.5 text-xs font-medium text-slate-200 sm:px-4 sm:py-3 sm:text-sm">
+                {fontScale}%
+              </div>
+              <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => updateFontScale(fontScale - fontScaleStep)}
+                  className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
+                  aria-label="Decrease lyrics size"
+                >
+                  -
+                </button>
+                <input
+                  className="min-w-0 w-full cursor-pointer accent-amber-300"
+                  type="range"
+                  min={minimumFontScale}
+                  max={maximumFontScale}
+                  step={fontScaleStep}
+                  value={fontScale}
+                  onChange={(event) => updateFontScale(Number(event.target.value))}
+                />
+                <button
+                  type="button"
+                  onClick={() => updateFontScale(fontScale + fontScaleStep)}
+                  className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
+                  aria-label="Increase lyrics size"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </label>
         </div>
 
         <div
@@ -641,7 +723,10 @@ export function AutoScrollReader({
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
                 {section.title}
               </h3>
-              <div className="mt-3 min-w-0 max-w-full space-y-0.5 overflow-x-auto font-mono text-[12px] leading-6 text-slate-100 sm:mt-4 sm:space-y-1 sm:text-[15px] sm:leading-7 lg:text-base lg:leading-8">
+              <div
+                className="mt-3 min-w-0 max-w-full space-y-0.5 overflow-x-auto font-mono text-slate-100 [--reader-font-size:12px] [--reader-line-height:1.5rem] sm:mt-4 sm:space-y-1 sm:[--reader-font-size:15px] sm:[--reader-line-height:1.75rem] lg:[--reader-font-size:16px] lg:[--reader-line-height:2rem]"
+                style={readerTypographyStyle}
+              >
                 {section.lines.map((line, lineIndex) => (
                   <ChordLine
                     key={`${section.title}-${index}-line-${lineIndex}`}

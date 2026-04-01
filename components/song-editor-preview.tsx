@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
 import { parseChordSections } from "@/lib/chord-sections";
-import type { ChordDefinition, VideoLink } from "@/lib/types";
+import type { ChordDefinition } from "@/lib/types";
 
 type SongEditorPreviewProps = {
   artistOptions: Array<{
@@ -18,7 +18,6 @@ type SongEditorPreviewProps = {
   initialExtractedText: string;
   initialScrollSpeed: number;
   initialTitle: string;
-  videoLinks: VideoLink[];
 };
 
 type PreviewState = {
@@ -74,7 +73,6 @@ export function SongEditorPreview({
   initialExtractedText,
   initialScrollSpeed,
   initialTitle,
-  videoLinks,
 }: SongEditorPreviewProps) {
   const initialState = useMemo<PreviewState>(
     () => ({
@@ -128,7 +126,8 @@ export function SongEditorPreview({
         </p>
         <p className="mt-2 text-sm leading-6 text-slate-300">
           This live preview mirrors the public song page formatting for the title,
-          artist, reader content, and scroll speed while you edit.
+          artist, reader content, and scroll speed while you edit, without the
+          separate video dock.
         </p>
       </div>
 
@@ -145,7 +144,6 @@ export function SongEditorPreview({
         chordDefinitions={chordDefinitions}
         defaultSpeed={previewState.scrollSpeed}
         sections={previewSections}
-        videoLinks={videoLinks}
       />
     </div>
   );

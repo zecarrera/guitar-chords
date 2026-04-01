@@ -252,31 +252,10 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
                 </div>
               </div>
 
-              <SongEditorPreview
-                formId="song-editor-form"
-                initialTitle={song.title}
-                initialArtistId={song.artistId}
-                initialArtistName={song.artist.name}
-                initialExtractedText={primaryDocument?.extractedText ?? ""}
-                initialScrollSpeed={primaryDocument?.scrollSpeed ?? 24}
-                artistOptions={artists.map((artist) => ({
-                  id: artist.id,
-                  name: artist.name,
-                }))}
-                chordDefinitions={chordDefinitions}
-                videoLinks={song.videoLinks.map((video) => ({
-                  label: video.label,
-                  type: video.type === "TUTORIAL" ? "tutorial" : "song",
-                  url: video.url,
-                }))}
-              />
-
               <SongSaveButton />
           </form>
-        </div>
 
-        <aside className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6">
-          <div>
+          <div className="mt-6 border-t border-white/10 pt-6">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
               Video links
             </p>
@@ -329,41 +308,57 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <p className="text-sm font-semibold text-white">Add video link</p>
-            <form action={createVideoLinkAction} className="mt-4 space-y-3">
-              <input type="hidden" name="songId" value={song.id} />
-              <input type="hidden" name="songSlug" value={song.slug} />
-              <select
-                name="type"
-                defaultValue="TUTORIAL"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-              >
-                <option value="TUTORIAL">Tutorial</option>
-                <option value="SONG">Song</option>
-              </select>
-              <input
-                name="label"
-                placeholder="Lesson or reference title"
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                required
-              />
-              <input
-                name="url"
-                placeholder="https://..."
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
-                required
-              />
-              <button
-                type="submit"
-                className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
-              >
-                Add video
-              </button>
-            </form>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+              <p className="text-sm font-semibold text-white">Add video link</p>
+              <form action={createVideoLinkAction} className="mt-4 space-y-3">
+                <input type="hidden" name="songId" value={song.id} />
+                <input type="hidden" name="songSlug" value={song.slug} />
+                <select
+                  name="type"
+                  defaultValue="TUTORIAL"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                >
+                  <option value="TUTORIAL">Tutorial</option>
+                  <option value="SONG">Song</option>
+                </select>
+                <input
+                  name="label"
+                  placeholder="Lesson or reference title"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  required
+                />
+                <input
+                  name="url"
+                  placeholder="https://..."
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-white"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-amber-300 px-4 py-2 text-xs font-semibold text-slate-950"
+                >
+                  Add video
+                </button>
+              </form>
+            </div>
           </div>
+        </div>
+
+        <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+          <SongEditorPreview
+            formId="song-editor-form"
+            initialTitle={song.title}
+            initialArtistId={song.artistId}
+            initialArtistName={song.artist.name}
+            initialExtractedText={primaryDocument?.extractedText ?? ""}
+            initialScrollSpeed={primaryDocument?.scrollSpeed ?? 24}
+            artistOptions={artists.map((artist) => ({
+              id: artist.id,
+              name: artist.name,
+            }))}
+            chordDefinitions={chordDefinitions}
+          />
 
           <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm leading-6 text-slate-300">
             <p className="font-semibold text-white">Current import source</p>
