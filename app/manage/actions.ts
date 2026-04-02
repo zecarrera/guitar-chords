@@ -34,6 +34,16 @@ function readOptionalString(formData: FormData, key: string) {
   return trimmed ? trimmed : null;
 }
 
+function readOptionalMultilineString(formData: FormData, key: string) {
+  const value = formData.get(key);
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  return value.trim() ? value : null;
+}
+
 function readOptionalNumber(formData: FormData, key: string) {
   const value = readOptionalString(formData, key);
 
@@ -241,7 +251,7 @@ export async function createSongAction(formData: FormData) {
   const artistId = readRequiredString(formData, "artistId");
   const sourceType = readRequiredString(formData, "sourceType");
   const scrollSpeed = readOptionalNumber(formData, "scrollSpeed") ?? 24;
-  const manualExtractedText = readOptionalString(formData, "extractedText");
+  const manualExtractedText = readOptionalMultilineString(formData, "extractedText");
   const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
   const normalizedSourceType: "PDF" | "EXTERNAL_LINK" =
     sourceType === "EXTERNAL_LINK" ? "EXTERNAL_LINK" : "PDF";
@@ -303,7 +313,7 @@ export async function updateSongAction(formData: FormData) {
   const documentTitle = readRequiredString(formData, "documentTitle");
   const sourceType = readRequiredString(formData, "sourceType");
   const fileUrl = readOptionalString(formData, "fileUrl");
-  const submittedExtractedText = readOptionalString(formData, "extractedText");
+  const submittedExtractedText = readOptionalMultilineString(formData, "extractedText");
   const scrollSpeed = readOptionalNumber(formData, "scrollSpeed");
   const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
   const genreIds = formData

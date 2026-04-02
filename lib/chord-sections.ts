@@ -15,8 +15,7 @@ export function parseChordSections(extractedText?: string | null): ChordSection[
     .map((block) =>
       block
         .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
+        .filter((line) => line.trim().length > 0),
     )
     .filter((block) => block.length > 0);
 
@@ -31,11 +30,14 @@ export function parseChordSections(extractedText?: string | null): ChordSection[
 
   return blocks.map((block, index) => {
     const [firstLine, ...rest] = block;
+    const trimmedFirstLine = firstLine.trim();
     const useFirstLineAsTitle =
-      rest.length > 0 && !firstLine.includes("[") && firstLine.length <= 40;
+      rest.length > 0 &&
+      !trimmedFirstLine.includes("[") &&
+      trimmedFirstLine.length <= 40;
 
     return {
-      title: useFirstLineAsTitle ? firstLine : `Section ${index + 1}`,
+      title: useFirstLineAsTitle ? trimmedFirstLine : `Section ${index + 1}`,
       lines: useFirstLineAsTitle ? rest : block,
     };
   });
