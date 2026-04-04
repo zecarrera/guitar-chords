@@ -250,6 +250,7 @@ type ChordLineProps = {
   line: string;
   onHideChordTooltip: () => void;
   onShowChordTooltip: (chordName: string, target: HTMLElement) => void;
+  showChords: boolean;
 };
 
 function buildPositionedChordLine(line: string) {
@@ -304,6 +305,7 @@ function ChordLine({
   line,
   onHideChordTooltip,
   onShowChordTooltip,
+  showChords,
 }: ChordLineProps) {
   const positionedChordLine = buildPositionedChordLine(line);
 
@@ -313,32 +315,34 @@ function ChordLine({
 
   return (
     <div className="space-y-0">
-      <div
-        className="relative whitespace-pre text-amber-200 leading-[1.5]"
-        style={{
-          width: `${Math.max(positionedChordLine.contentWidth, 1)}ch`,
-          height: "1.5em",
-        }}
-      >
-        {positionedChordLine.chords.map((chord, index) => (
-          <span
-            key={`${chord.name}-${chord.column}-${index}`}
-            tabIndex={0}
-            className="absolute cursor-help underline decoration-dotted underline-offset-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-            style={{ left: `${chord.column}ch` }}
-            onBlur={onHideChordTooltip}
-            onMouseEnter={(event) =>
-              onShowChordTooltip(chord.name, event.currentTarget)
-            }
-            onMouseLeave={onHideChordTooltip}
-            onFocus={(event) =>
-              onShowChordTooltip(chord.name, event.currentTarget)
-            }
-          >
-            {chord.label}
-          </span>
-        ))}
-      </div>
+      {showChords ? (
+        <div
+          className="relative whitespace-pre text-amber-200 leading-[1.5]"
+          style={{
+            width: `${Math.max(positionedChordLine.contentWidth, 1)}ch`,
+            height: "1.5em",
+          }}
+        >
+          {positionedChordLine.chords.map((chord, index) => (
+            <span
+              key={`${chord.name}-${chord.column}-${index}`}
+              tabIndex={0}
+              className="absolute cursor-help underline decoration-dotted underline-offset-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
+              style={{ left: `${chord.column}ch` }}
+              onBlur={onHideChordTooltip}
+              onMouseEnter={(event) =>
+                onShowChordTooltip(chord.name, event.currentTarget)
+              }
+              onMouseLeave={onHideChordTooltip}
+              onFocus={(event) =>
+                onShowChordTooltip(chord.name, event.currentTarget)
+              }
+            >
+              {chord.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
       {positionedChordLine.lyricText.trim().length > 0 ? (
         <div className="-mt-[0.2em] whitespace-pre text-slate-100 leading-[1.5]">
           {positionedChordLine.lyricText}
@@ -430,6 +434,7 @@ export function AutoScrollReader({
   const [manualFontScale, setManualFontScale] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayModeActive, setIsPlayModeActive] = useState(false);
+  const [showChords, setShowChords] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState<{
     width: number;
@@ -704,6 +709,18 @@ export function AutoScrollReader({
               </div>
             </div>
           </label>
+
+          <label className="mt-4 flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={showChords}
+              onChange={(event) => setShowChords(event.target.checked)}
+              className="h-4 w-4 cursor-pointer accent-amber-300"
+            />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Show chords
+            </span>
+          </label>
         </div>
 
         <div
@@ -733,6 +750,7 @@ export function AutoScrollReader({
                     line={line}
                     onHideChordTooltip={hideChordTooltip}
                     onShowChordTooltip={showChordTooltip}
+                    showChords={showChords}
                   />
                 ))}
               </div>
