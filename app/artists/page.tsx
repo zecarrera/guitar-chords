@@ -27,9 +27,6 @@ export default async function ArtistsPage() {
                 <h2 className="text-xl font-semibold text-white">
                   {artist.name}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  {artist.summary}
-                </p>
               </div>
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
                 {artist.songCount} songs
