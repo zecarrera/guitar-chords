@@ -503,3 +503,24 @@ export async function deleteVideoLinkAction(formData: FormData) {
   revalidatePath(`/manage/songs/${songSlug}`);
   redirect(`/manage/songs/${songSlug}`);
 }
+
+export async function updateScrollSpeedAction(slug: string, speed: number) {
+  const song = await prisma.song.findUnique({
+    where: { slug },
+    select: { documents: { take: 1, select: { id: true } } },
+  });
+
+  const documentId = song?.documents[0]?.id;
+
+  if (!documentId) {
+    return;
+  }
+
+  await prisma.chordDocument.update({
+    where: { id: documentId },
+    data: { scrollSpeed: speed },
+  });
+
+  revalidatePath(`/songs/${slug}`);
+  revalidatePath(`/manage/songs/${slug}`);
+}

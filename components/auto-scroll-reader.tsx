@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 
+import { updateScrollSpeedAction } from "@/app/manage/actions";
 import { buildChordShapeLookup, getChordShape } from "@/lib/chord-library";
 import type { ChordDefinition, ChordSection, VideoLink } from "@/lib/types";
 
@@ -16,6 +17,7 @@ type AutoScrollReaderProps = {
   controlsPageChrome?: boolean;
   defaultSpeed: number;
   sections: ChordSection[];
+  songSlug?: string;
   videoLinks?: VideoLink[];
   documentLabel?: string | null;
   documentUrl?: string | null;
@@ -413,6 +415,7 @@ export function AutoScrollReader({
   controlsPageChrome = false,
   defaultSpeed,
   sections,
+  songSlug,
   videoLinks = [],
   documentLabel,
   documentUrl,
@@ -478,6 +481,14 @@ export function AutoScrollReader({
   useEffect(() => {
     window.localStorage.setItem(fontScaleStorageKey, String(fontScale));
   }, [fontScale]);
+
+  const wasPlayingRef = useRef(false);
+  useEffect(() => {
+    if (wasPlayingRef.current && !isPlaying && songSlug && speed !== defaultSpeed) {
+      updateScrollSpeedAction(songSlug, speed);
+    }
+    wasPlayingRef.current = isPlaying;
+  }, [isPlaying, songSlug, speed, defaultSpeed]);
 
   useEffect(() => {
     function updateViewportSize() {

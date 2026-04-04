@@ -103,6 +103,7 @@ export default async function SongDetailPage({
         controlsPageChrome
         defaultSpeed={song.scrollSpeed}
         sections={song.sections}
+        songSlug={song.slug}
         videoLinks={song.videoLinks}
         documentLabel={song.documentLabel}
         documentUrl={song.documentUrl}
