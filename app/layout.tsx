@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   title: "Guitar Chords Library",
   description:
     "A responsive guitar chord library for organizing songs and play-along reader views.",
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 const navigation = [
