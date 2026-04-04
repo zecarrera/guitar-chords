@@ -13,6 +13,7 @@ import { buildChordShapeLookup, getChordShape } from "@/lib/chord-library";
 import type { ChordDefinition, ChordSection, VideoLink } from "@/lib/types";
 
 type AutoScrollReaderProps = {
+  autoPlay?: boolean;
   chordDefinitions?: ChordDefinition[];
   controlsPageChrome?: boolean;
   defaultSpeed: number;
@@ -412,6 +413,7 @@ function getEmbeddedVideoUrl(url: string) {
 }
 
 export function AutoScrollReader({
+  autoPlay = false,
   chordDefinitions = [],
   controlsPageChrome = false,
   defaultSpeed,
@@ -483,6 +485,14 @@ export function AutoScrollReader({
   useEffect(() => {
     window.localStorage.setItem(fontScaleStorageKey, String(fontScale));
   }, [fontScale]);
+
+  useEffect(() => {
+    if (autoPlay) {
+      setIsPlayModeActive(true);
+      setIsPlaying(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const wasPlayingRef = useRef(false);
   useEffect(() => {

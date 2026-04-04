@@ -20,6 +20,7 @@ export function PlaylistPlayer({
 }: PlaylistPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [hasStartedPlayback, setHasStartedPlayback] = useState(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const song = songs[currentIndex];
@@ -39,6 +40,7 @@ export function PlaylistPlayer({
   }
 
   const handlePlaybackComplete = useCallback(() => {
+    setHasStartedPlayback(true);
     if (isLast) {
       return;
     }
@@ -125,6 +127,7 @@ export function PlaylistPlayer({
 
       <AutoScrollReader
         key={song.slug}
+        autoPlay={hasStartedPlayback && currentIndex > 0}
         chordDefinitions={chordDefinitions}
         controlsPageChrome
         defaultSpeed={song.scrollSpeed}
