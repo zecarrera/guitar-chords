@@ -39,9 +39,7 @@ export default async function Home() {
                       {song.artist} · {song.keySignature} · capo {song.capo}
                     </p>
                   </div>
-                  <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
-                    {song.status}
-                  </span>
+
                 </div>
               </Link>
             ))}

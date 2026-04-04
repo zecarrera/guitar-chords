@@ -30,61 +30,10 @@ export default async function SongsPage() {
             href={`/songs/${song.slug}`}
             className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 transition hover:border-amber-300/40 hover:bg-slate-900"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-semibold text-white">{song.title}</h2>
-                <p className="mt-1 text-sm text-slate-300">{song.artist}</p>
-              </div>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
-                {song.sourceType === "pdf" ? "PDF import" : "External link"}
-              </span>
-            </div>
-
-            <dl className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/5 p-3">
-                <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Key
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-white">
-                  {song.keySignature}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-3">
-                <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Capo
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-white">
-                  {song.capo}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-3">
-                <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Reader preset
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-white">
-                  {song.scrollSpeed} px/s
-                </dd>
-              </div>
-            </dl>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {song.genres.map((genre) => (
-                <span
-                  key={genre}
-                  className="rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-slate-200"
-                >
-                  {genre}
-                </span>
-              ))}
-              {song.lists.map((list) => (
-                <span
-                  key={list}
-                  className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-medium text-amber-100"
-                >
-                  {list}
-                </span>
-              ))}
-            </div>
+            <h2 className="text-xl font-semibold text-white">{song.title}</h2>
+            <p className="mt-1 text-sm text-slate-300">
+              {song.artist}{song.capo ? ` · capo ${song.capo}` : ""}
+            </p>
           </Link>
         ))}
       </section>
