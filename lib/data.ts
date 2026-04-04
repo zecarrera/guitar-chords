@@ -277,6 +277,11 @@ export async function getLibrarySnapshot(): Promise<Snapshot> {
   }
 }
 
+export async function getSongsByArtist(artistName: string) {
+  const snapshot = await getLibrarySnapshot();
+  return snapshot.songs.filter((song) => song.artist === artistName);
+}
+
 export async function getSongs() {
   const snapshot = await getLibrarySnapshot();
   return snapshot.songs;

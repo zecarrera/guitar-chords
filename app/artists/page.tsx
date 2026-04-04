@@ -24,9 +24,12 @@ export default async function ArtistsPage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-white">
+                <Link
+                  href={`/artists/${encodeURIComponent(artist.name)}/play`}
+                  className="text-xl font-semibold text-white transition hover:text-amber-300"
+                >
                   {artist.name}
-                </h2>
+                </Link>
               </div>
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
                 {artist.songCount} songs

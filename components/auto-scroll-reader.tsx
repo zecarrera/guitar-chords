@@ -16,6 +16,7 @@ type AutoScrollReaderProps = {
   chordDefinitions?: ChordDefinition[];
   controlsPageChrome?: boolean;
   defaultSpeed: number;
+  onPlaybackComplete?: () => void;
   sections: ChordSection[];
   songSlug?: string;
   videoLinks?: VideoLink[];
@@ -414,6 +415,7 @@ export function AutoScrollReader({
   chordDefinitions = [],
   controlsPageChrome = false,
   defaultSpeed,
+  onPlaybackComplete,
   sections,
   songSlug,
   videoLinks = [],
@@ -559,6 +561,7 @@ export function AutoScrollReader({
 
       if (reachedBottom) {
         setIsPlaying(false);
+        onPlaybackComplete?.();
         return;
       }
 
