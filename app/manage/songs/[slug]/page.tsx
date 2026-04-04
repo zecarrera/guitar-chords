@@ -161,7 +161,7 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
                 </label>
                 <label className="space-y-2">
                   <span className="text-sm font-medium text-slate-200">
-                    Difficulty
+                    Strumming pattern
                   </span>
                   <input
                     name="difficulty"

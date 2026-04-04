@@ -52,6 +52,10 @@ export default async function SongDetailPage({
     notFound();
   }
 
+  const hasCapo = song.capo > 0;
+  const hasStrummingPattern =
+    song.difficulty.trim().length > 0 && song.difficulty !== "Unspecified";
+
   return (
     <div className="space-y-6">
       <SongViewChrome />
@@ -69,6 +73,20 @@ export default async function SongDetailPage({
             <h1 className="mt-3 text-4xl font-semibold text-white sm:text-5xl">
               {song.title}
             </h1>
+            {hasCapo || hasStrummingPattern ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {hasCapo ? (
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-200">
+                    Capo {song.capo}
+                  </span>
+                ) : null}
+                {hasStrummingPattern ? (
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-200">
+                    Strumming pattern: {song.difficulty}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <Link
