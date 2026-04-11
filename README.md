@@ -2,6 +2,17 @@
 
 A responsive Next.js application for storing guitar chord sheets, organizing them by artist, genre, and custom lists, and opening songs in a play-along reader with adjustable auto-scroll.
 
+## Features
+
+- **Song library** — browse all songs alphabetically with instant search by title or artist
+- **Play-along reader** — auto-scroll reader with adjustable speed and font size; screen wake lock keeps the display on while playing
+- **Chord visibility toggle** — hide chord annotations during playback to practice by ear
+- **Artist playlist mode** — tap an artist to queue all their songs; playback advances automatically between songs
+- **Auto-save scroll speed** — preferred scroll speed is persisted back to the song after playback stops
+- **Interactive chord diagrams** — hover or tap a chord annotation to see a fretboard diagram
+- **Manage panel** — add songs via PDF upload or external link, edit metadata, manage video links
+- **iPhone home screen icon** — Apple Touch Icon included for add-to-home-screen installs
+
 ## Stack
 
 - `Next.js` App Router with `TypeScript`
@@ -68,7 +79,10 @@ Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. 
 ## Architecture overview
 
 - `app/` holds the App Router pages for overview, songs, artists, genres, lists, import review, and reader mode
-- `components/auto-scroll-reader.tsx` contains the browser-side play-along experience
+- `app/artists/[name]/play/` — artist playlist page that queues all songs for an artist
+- `components/auto-scroll-reader.tsx` — browser-side play-along experience with wake lock, chord toggle, and auto-save
+- `components/playlist-player.tsx` — client component managing playlist state and auto-advance between songs
+- `components/song-list.tsx` / `components/artist-list.tsx` — searchable list components used on the Songs and Artists pages
 - `lib/demo-data.ts` provides build-safe sample content that mirrors the intended domain model
 - `prisma/schema.prisma` defines songs, artists, genres, custom lists, chord documents, video links, and import sources
 
@@ -79,8 +93,8 @@ Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. 
 - Render free does not support `preDeployCommand`, so the Blueprint build step runs `npm run db:generate && npm run db:migrate && npm run db:seed && npm run build`
 - Health checks use `/api/health`
 - During the initial Blueprint sync, Render will prompt you for both `DATABASE_URL` and `DIRECT_URL` because they are marked with `sync: false`
-- Set `DATABASE_URL` to Neon’s pooled URL
-- Set `DIRECT_URL` to Neon’s direct URL
+- Set `DATABASE_URL` to Neon's pooled URL
+- Set `DIRECT_URL` to Neon's direct URL
 - `ENABLE_DATABASE_READS=true` in the deployment so the app uses Neon-backed persistence
 - `SEED_DEMO_DATA=true` lets the first deploy populate baseline content if the database is empty
 
