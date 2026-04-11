@@ -503,6 +503,26 @@ export function AutoScrollReader({
   }, [isPlaying, songSlug, speed, defaultSpeed]);
 
   useEffect(() => {
+    if (!isPlaying) {
+      return;
+    }
+
+    let wakeLock: WakeLockSentinel | null = null;
+
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then((lock) => {
+        wakeLock = lock;
+      }).catch(() => {
+        // Wake lock unavailable or denied — silent fail
+      });
+    }
+
+    return () => {
+      wakeLock?.release();
+    };
+  }, [isPlaying]);
+
+  useEffect(() => {
     function updateViewportSize() {
       const visualViewport = window.visualViewport;
 
