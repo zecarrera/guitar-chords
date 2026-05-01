@@ -86,21 +86,23 @@ Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. 
 - `lib/demo-data.ts` provides build-safe sample content that mirrors the intended domain model
 - `prisma/schema.prisma` defines songs, artists, genres, custom lists, chord documents, video links, and import sources
 
-## Render deployment direction
+## Vercel deployment
 
-- A ready-to-sync `render.yaml` blueprint is included at the repo root
-- The recommended free persistent setup is: Render free web service + external Neon Postgres
-- Render free does not support `preDeployCommand`, so the Blueprint build step runs `npm run db:generate && npm run db:migrate && npm run db:seed && npm run build`
-- Health checks use `/api/health`
-- During the initial Blueprint sync, Render will prompt you for both `DATABASE_URL` and `DIRECT_URL` because they are marked with `sync: false`
-- Set `DATABASE_URL` to Neon's pooled URL
-- Set `DIRECT_URL` to Neon's direct URL
-- `ENABLE_DATABASE_READS=true` in the deployment so the app uses Neon-backed persistence
-- `SEED_DEMO_DATA=true` lets the first deploy populate baseline content if the database is empty
+- `vercel.json` configures the build command: `db:generate && db:migrate && db:seed && build`
+- The recommended free persistent setup is: Vercel Hobby + external Neon Postgres
+- Database migrations and seeding run as part of the Vercel build step on every deploy (seed is idempotent)
+- Health checks are available at `/api/health` but are not required by Vercel
+- Configure these environment variables in the Vercel project dashboard:
+  - `DATABASE_URL`: Neon's pooled connection string (used at runtime)
+  - `DIRECT_URL`: Neon's direct connection string (used by Prisma migrations)
+  - `ENABLE_DATABASE_READS=true` so the app reads from Neon-backed persistence
+  - `SEED_DEMO_DATA=true` to populate baseline content on the first deploy
+- Node.js version is set to **22.x** in the Vercel project settings (Project Settings → General → Node.js Version)
+- PDF uploads are capped at **4.5 MB** due to Vercel Hobby's infrastructure-level request body limit
 
 ## Neon setup notes
 
 1. Create a free Neon project.
 2. Copy both the pooled and direct Postgres connection strings from Neon.
-3. Use those values for local `.env` and for Render's `DATABASE_URL` / `DIRECT_URL` prompts during Blueprint creation.
-4. After the first deploy and initial seed, you can keep `SEED_DEMO_DATA=true` safely because the seed script skips when songs already exist, or set it to `false` once you no longer want automatic baseline seeding.
+3. Use those values for local `.env` and for the Vercel environment variable settings.
+4. `SEED_DEMO_DATA=true` is safe to keep permanently — the seed script skips records that already exist.
