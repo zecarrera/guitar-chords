@@ -1,0 +1,5 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run db:generate && npm run db:migrate && npm run db:seed && npm run build",
+  "nodeVersion": "22.x"
+}
