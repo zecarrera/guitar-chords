@@ -626,10 +626,19 @@ export function AutoScrollReader({
 
   function showChordTooltip(chordName: string, target: HTMLElement) {
     const rect = target.getBoundingClientRect();
+    // The chord diagram is at most w-72 (288px). Clamp so the centered tooltip
+    // never overflows the left or right viewport edge.
+    const tooltipHalfWidth = 144; // half of 288px (w-72)
+    const margin = 8;
+    const rawLeft = rect.left + rect.width / 2;
+    const clampedLeft = Math.max(
+      tooltipHalfWidth + margin,
+      Math.min(window.innerWidth - tooltipHalfWidth - margin, rawLeft),
+    );
 
     setActiveChordTooltip({
       chordName,
-      left: rect.left + rect.width / 2,
+      left: clampedLeft,
       top: rect.top - 12,
     });
   }
@@ -649,7 +658,9 @@ export function AutoScrollReader({
     <section
       className={`min-w-0 grid gap-6 ${
         videoItems.length > 0 || documentUrl
-          ? "xl:grid-cols-[minmax(0,1fr)_22rem]"
+          ? isPlaying
+            ? ""
+            : "xl:grid-cols-[minmax(0,1fr)_22rem]"
           : ""
       }`}
     >
@@ -774,7 +785,7 @@ export function AutoScrollReader({
             scrollPositionRef.current = event.currentTarget.scrollTop;
           }}
           style={readerHeightStyle}
-          className="min-w-0 h-[70vh] space-y-4 overflow-y-auto px-3 py-4 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:py-6 lg:h-[78vh]"
+          className="min-w-0 h-[70vh] space-y-4 overflow-y-auto px-3 pt-4 pb-20 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:pt-6 sm:pb-28 lg:h-[78vh]"
         >
           {sections.map((section, index) => (
             <div
@@ -818,7 +829,7 @@ export function AutoScrollReader({
         </div>
       ) : null}
 
-      {videoItems.length > 0 || documentUrl ? (
+      {!isPlaying && (videoItems.length > 0 || documentUrl) ? (
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           {videoItems.length > 0 ? (
             <div
