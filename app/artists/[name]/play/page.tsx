@@ -12,7 +12,7 @@ export async function generateStaticParams() {
   const artists = await getArtists();
 
   return artists.map((artist) => ({
-    name: encodeURIComponent(artist.name),
+    name: artist.name,
   }));
 }
 
@@ -20,10 +20,9 @@ export async function generateMetadata({
   params,
 }: ArtistPlaylistPageProps): Promise<Metadata> {
   const { name } = await params;
-  const artistName = decodeURIComponent(name);
 
   return {
-    title: `${artistName} · Playlist · Guitar Chords Library`,
+    title: `${name} · Playlist · Guitar Chords Library`,
   };
 }
 
@@ -31,10 +30,9 @@ export default async function ArtistPlaylistPage({
   params,
 }: ArtistPlaylistPageProps) {
   const { name } = await params;
-  const artistName = decodeURIComponent(name);
 
   const [songs, chordDefinitions] = await Promise.all([
-    getSongsByArtist(artistName),
+    getSongsByArtist(name),
     getChordDefinitions(),
   ]);
 
@@ -44,7 +42,7 @@ export default async function ArtistPlaylistPage({
 
   return (
     <PlaylistPlayer
-      artistName={artistName}
+      artistName={name}
       chordDefinitions={chordDefinitions}
       songs={songs}
     />
