@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import { autoFormatChordSheet } from "@/lib/auto-format";
 
 type SourceType = "PDF" | "EXTERNAL_LINK";
 
@@ -43,6 +45,18 @@ export function SongDocumentFields({
 }: SongDocumentFieldsProps) {
   const [sourceType, setSourceType] = useState<SourceType>(defaultSourceType);
   const isExternalLink = sourceType === "EXTERNAL_LINK";
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [formatDone, setFormatDone] = useState(false);
+
+  function handleAutoFormat() {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const formatted = autoFormatChordSheet(textarea.value);
+    textarea.value = formatted;
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    setFormatDone(true);
+    setTimeout(() => setFormatDone(false), 2000);
+  }
 
   return (
     <>
@@ -130,8 +144,23 @@ export function SongDocumentFields({
       )}
 
       <label className="mt-4 block space-y-2">
-        <span className="text-sm font-medium text-slate-200">Reader content</span>
+        <span className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-slate-200">Reader content</span>
+          <button
+            type="button"
+            onClick={handleAutoFormat}
+            disabled={formatDone}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-300 ${
+              formatDone
+                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                : "border-amber-300/30 text-amber-300 hover:border-amber-300/60 hover:bg-amber-300/10"
+            }`}
+          >
+            {formatDone ? "✓ Formatted!" : "Auto-format"}
+          </button>
+        </span>
         <textarea
+          ref={textareaRef}
           name="extractedText"
           rows={extractedTextRows}
           defaultValue={extractedTextDefaultValue}
