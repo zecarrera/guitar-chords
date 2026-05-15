@@ -29,9 +29,7 @@ export type Song = {
   genres: string[];
   lists: string[];
   sourceType: SourceType;
-  keySignature: string;
   capo: number;
-  tuning: string;
   difficulty: string;
   status: "draft" | "published";
   scrollSpeed: number;
