@@ -92,7 +92,7 @@ function ChordDiagram({ chordName, chordLookup }: ChordDiagramProps) {
 
   if (!chordShape) {
     return (
-      <div className="w-52 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
+      <div className="w-full max-w-52 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
         <p className="text-sm font-semibold text-white">{chordName}</p>
         <p className="mt-2 text-xs leading-5 text-slate-300">
           Chord diagram not in the built-in library yet.
@@ -113,7 +113,7 @@ function ChordDiagram({ chordName, chordLookup }: ChordDiagramProps) {
   const gridHeight = fretSpacing * fretCount;
 
   return (
-    <div className="w-72 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
+    <div className="w-full max-w-72 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-white">{chordShape.name}</p>
@@ -341,6 +341,9 @@ function ChordLine({
               onFocus={(event) =>
                 onShowChordTooltip(chord.name, event.currentTarget)
               }
+              onClick={(event) =>
+                onShowChordTooltip(chord.name, event.currentTarget)
+              }
             >
               {chord.label}
             </span>
@@ -441,6 +444,7 @@ export function AutoScrollReader({
   const [manualFontScale, setManualFontScale] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayModeActive, setIsPlayModeActive] = useState(false);
+  const [isMobileControlsExpanded, setIsMobileControlsExpanded] = useState(false);
   const [showChords, setShowChords] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState<{
@@ -449,8 +453,8 @@ export function AutoScrollReader({
   } | null>(null);
   const [activeChordTooltip, setActiveChordTooltip] = useState<{
     chordName: string;
-    left: number;
-    top: number;
+    left?: number;
+    top?: number;
   } | null>(null);
   const speed = manualSpeed ?? savedSpeed ?? defaultSpeed;
   const fontScale = manualFontScale ?? savedFontScale ?? defaultFontScale;
@@ -459,7 +463,10 @@ export function AutoScrollReader({
       ? 0.78
       : viewportSize && viewportSize.width >= 640
         ? 0.74
-        : 0.7;
+        : 0.72;
+  const useBottomAnchoredChordTooltip = Boolean(
+    viewportSize && viewportSize.width < 640,
+  );
   const readerHeightStyle = viewportSize
     ? {
         height: `${Math.max(320, Math.round(viewportSize.height * readerViewportRatio))}px`,
@@ -506,6 +513,9 @@ export function AutoScrollReader({
     if (!isPlaying) {
       return;
     }
+
+    setIsMobileControlsExpanded(false);
+    setActiveChordTooltip(null);
 
     let wakeLock: WakeLockSentinel | null = null;
 
@@ -625,6 +635,11 @@ export function AutoScrollReader({
   }
 
   function showChordTooltip(chordName: string, target: HTMLElement) {
+    if (useBottomAnchoredChordTooltip) {
+      setActiveChordTooltip({ chordName });
+      return;
+    }
+
     const rect = target.getBoundingClientRect();
     // The chord diagram is at most w-72 (288px). Clamp so the centered tooltip
     // never overflows the left or right viewport edge.
@@ -665,8 +680,124 @@ export function AutoScrollReader({
       }`}
     >
       <div className="min-w-0 rounded-[2rem] border border-white/10 bg-slate-900/90 shadow-2xl shadow-black/20">
-        <div className="border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur sm:px-6">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="border-b border-white/10 bg-slate-950/80 px-3 py-1 backdrop-blur sm:px-6 sm:py-4">
+          <div className="flex items-center gap-3 sm:hidden">
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlayModeActive(true);
+                setIsPlaying((playing) => !playing);
+              }}
+              className="inline-flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-full bg-amber-300 text-xl font-semibold text-slate-950 transition hover:bg-amber-200"
+              aria-label={isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
+            >
+              {isPlaying ? "⏸" : "▶"}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setIsMobileControlsExpanded((expanded) => !expanded)
+              }
+              className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg text-white transition hover:border-white/30 hover:bg-white/5"
+              aria-expanded={isMobileControlsExpanded}
+              aria-label={
+                isMobileControlsExpanded ? "Hide reader settings" : "Show reader settings"
+              }
+            >
+              ⚙
+            </button>
+          </div>
+
+          {isMobileControlsExpanded ? (
+            <div className="mt-3 space-y-4 border-t border-white/10 pt-3 sm:hidden">
+              <label className="block">
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <span>Scroll speed</span>
+                  <span className="rounded-full bg-white/5 px-3 py-2 text-[11px] text-slate-200">
+                    {speed} px/s
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateSpeed(speed - speedButtonStep)}
+                    className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                    aria-label="Decrease scroll speed"
+                  >
+                    -
+                  </button>
+                  <input
+                    className="min-w-0 h-11 w-full cursor-pointer accent-amber-300"
+                    type="range"
+                    min={minimumScrollSpeed}
+                    max={maximumScrollSpeed}
+                    step={speedSliderStep}
+                    value={speed}
+                    onChange={(event) => updateSpeed(Number(event.target.value))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateSpeed(speed + speedButtonStep)}
+                    className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                    aria-label="Increase scroll speed"
+                  >
+                    +
+                  </button>
+                </div>
+              </label>
+
+              <label className="block">
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <span>Lyrics size</span>
+                  <span className="rounded-full bg-white/5 px-3 py-2 text-[11px] text-slate-200">
+                    {fontScale}%
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateFontScale(fontScale - fontScaleStep)}
+                    className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                    aria-label="Decrease lyrics size"
+                  >
+                    -
+                  </button>
+                  <input
+                    className="min-w-0 h-11 w-full cursor-pointer accent-amber-300"
+                    type="range"
+                    min={minimumFontScale}
+                    max={maximumFontScale}
+                    step={fontScaleStep}
+                    value={fontScale}
+                    onChange={(event) => updateFontScale(Number(event.target.value))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateFontScale(fontScale + fontScaleStep)}
+                    className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+                    aria-label="Increase lyrics size"
+                  >
+                    +
+                  </button>
+                </div>
+              </label>
+
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
+                <input
+                  type="checkbox"
+                  checked={showChords}
+                  onChange={(event) => setShowChords(event.target.checked)}
+                  className="h-5 w-5 cursor-pointer accent-amber-300"
+                />
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Show chords
+                </span>
+              </label>
+            </div>
+          ) : null}
+
+          <div className="hidden sm:block">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => {
@@ -776,6 +907,7 @@ export function AutoScrollReader({
               Show chords
             </span>
           </label>
+          </div>
         </div>
 
         <div
@@ -785,7 +917,7 @@ export function AutoScrollReader({
             scrollPositionRef.current = event.currentTarget.scrollTop;
           }}
           style={readerHeightStyle}
-          className="min-w-0 h-[70vh] space-y-4 overflow-y-auto px-3 pt-4 pb-20 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:pt-6 sm:pb-28 lg:h-[78vh]"
+          className="min-w-0 h-[72dvh] space-y-4 overflow-y-auto overscroll-contain px-3 pt-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] touch-pan-y sm:h-[74vh] sm:space-y-6 sm:px-6 sm:pt-6 sm:pb-28 lg:h-[78vh]"
         >
           {sections.map((section, index) => (
             <div
@@ -815,18 +947,37 @@ export function AutoScrollReader({
       </div>
 
       {activeChordTooltip ? (
-        <div
-          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full"
-          style={{
-            left: activeChordTooltip.left,
-            top: activeChordTooltip.top,
-          }}
-        >
-          <ChordDiagram
-            chordName={activeChordTooltip.chordName}
-            chordLookup={chordLookup}
-          />
-        </div>
+        useBottomAnchoredChordTooltip ? (
+          <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-50 flex justify-center px-4 sm:hidden">
+            <div className="pointer-events-auto relative w-full max-w-72">
+              <button
+                type="button"
+                onClick={hideChordTooltip}
+                className="absolute top-3 right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-slate-950/95 text-sm text-slate-200 transition hover:border-white/30 hover:bg-slate-900"
+                aria-label="Close chord diagram"
+              >
+                ✕
+              </button>
+              <ChordDiagram
+                chordName={activeChordTooltip.chordName}
+                chordLookup={chordLookup}
+              />
+            </div>
+          </div>
+        ) : (
+          <div
+            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full"
+            style={{
+              left: activeChordTooltip.left,
+              top: activeChordTooltip.top,
+            }}
+          >
+            <ChordDiagram
+              chordName={activeChordTooltip.chordName}
+              chordLookup={chordLookup}
+            />
+          </div>
+        )
       ) : null}
 
       {!isPlaying && (videoItems.length > 0 || documentUrl) ? (
