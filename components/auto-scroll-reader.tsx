@@ -459,7 +459,9 @@ export function AutoScrollReader({
       ? 0.85
       : viewportSize && viewportSize.width >= 640
         ? 0.82
-        : 0.75;
+        : isPlayModeActive
+          ? 0.80
+          : 0.72;
   const readerHeightStyle = viewportSize
     ? {
         height: `${Math.max(320, Math.round(viewportSize.height * readerViewportRatio))}px`,
@@ -681,9 +683,11 @@ export function AutoScrollReader({
               className="min-w-0 px-1"
             >
               {section.title ? (
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  {section.title}
-                </h3>
+                <div className="mb-3">
+                  <span className="inline-block rounded-full bg-slate-700/60 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-slate-200">
+                    {section.title}
+                  </span>
+                </div>
               ) : null}
               <div
                 className="min-w-0 max-w-full overflow-x-auto font-mono text-slate-100 [--reader-font-size:14px] [--reader-line-height:1.6rem] sm:[--reader-font-size:15px] sm:[--reader-line-height:1.75rem] lg:[--reader-font-size:16px] lg:[--reader-line-height:2rem]"
