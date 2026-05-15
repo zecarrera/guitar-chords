@@ -22,16 +22,12 @@ function isChordLine(line: string): boolean {
 }
 
 /**
- * Wraps each bare token on a chord-only line in square brackets.
- * E.g. "Am G D Em" → "[Am] [G] [D] [Em]"
+ * Wraps each bare token on a chord-only line in square brackets,
+ * preserving the original whitespace so chords stay aligned with lyrics.
+ * E.g. "Am    G   D  Em" → "[Am]    [G]   [D]  [Em]"
  */
 function formatChordLine(line: string): string {
-  return line
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((token) => `[${token}]`)
-    .join(" ");
+  return line.trimEnd().replace(/\S+/g, (token) => `[${token}]`);
 }
 
 /**
