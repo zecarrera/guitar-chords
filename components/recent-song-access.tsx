@@ -92,7 +92,7 @@ export function RecentSongAccess({
             <div>
               <h2 className="text-lg font-semibold text-white">{song.title}</h2>
               <p className="mt-1 text-sm text-slate-300">
-                {song.artist} · {song.keySignature} · capo {song.capo}
+                {song.artist} · capo {song.capo}
               </p>
             </div>
             <span

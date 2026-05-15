@@ -36,7 +36,7 @@ export default async function Home() {
                       {song.title}
                     </h3>
                     <p className="mt-1 text-sm text-slate-300">
-                      {song.artist} · {song.keySignature} · capo {song.capo}
+                      {song.artist} · capo {song.capo}
                     </p>
                   </div>
 

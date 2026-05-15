@@ -65,9 +65,7 @@ model Song {
   title        String
   slug         String          @unique
   notes        String?
-  keySignature String?
   capo         Int?
-  tuning       String?
   difficulty   String?
   status       SongStatus      @default(DRAFT)
   artistId     String

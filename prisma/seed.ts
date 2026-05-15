@@ -97,9 +97,7 @@ async function seed() {
       create: {
         title: song.title,
         slug: song.slug,
-        keySignature: song.keySignature,
         capo: song.capo,
-        tuning: song.tuning,
         difficulty: song.difficulty,
         status: toSongStatus(song.status),
         artist: {
