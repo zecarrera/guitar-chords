@@ -168,44 +168,40 @@ export default async function ManageSongPage({ params }: ManageSongPageProps) {
               </label>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm font-semibold text-white">Genres</p>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Genres</span>
+                  <select
+                    name="genreIds"
+                    multiple
+                    defaultValue={Array.from(selectedGenreIds)}
+                    size={Math.min(genres.length, 6)}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-2 text-sm text-white"
+                  >
                     {genres.map((genre) => (
-                      <label
-                        key={genre.id}
-                        className="flex items-center gap-2 text-sm text-slate-200"
-                      >
-                        <input
-                          type="checkbox"
-                          name="genreIds"
-                          value={genre.id}
-                          defaultChecked={selectedGenreIds.has(genre.id)}
-                        />
+                      <option key={genre.id} value={genre.id} className="py-1">
                         {genre.name}
-                      </label>
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  <p className="text-xs text-slate-400">Hold Ctrl / Cmd to select multiple.</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm font-semibold text-white">Custom lists</p>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-slate-200">Custom lists</span>
+                  <select
+                    name="listIds"
+                    multiple
+                    defaultValue={Array.from(selectedListIds)}
+                    size={Math.min(customLists.length, 6)}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-2 text-sm text-white"
+                  >
                     {customLists.map((list) => (
-                      <label
-                        key={list.id}
-                        className="flex items-center gap-2 text-sm text-slate-200"
-                      >
-                        <input
-                          type="checkbox"
-                          name="listIds"
-                          value={list.id}
-                          defaultChecked={selectedListIds.has(list.id)}
-                        />
+                      <option key={list.id} value={list.id} className="py-1">
                         {list.name}
-                      </label>
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  <p className="text-xs text-slate-400">Hold Ctrl / Cmd to select multiple.</p>
                 </div>
               </div>
 
