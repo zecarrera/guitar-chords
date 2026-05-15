@@ -14,6 +14,20 @@ describe("autoFormatChordSheet", () => {
       expect(autoFormatChordSheet("Am G D Em")).toBe("[Am] [G] [D] [Em]");
     });
 
+    it("preserves internal spacing so chords stay aligned with lyrics", () => {
+      expect(autoFormatChordSheet("Am         G      D        Em")).toBe(
+        "[Am]         [G]      [D]        [Em]",
+      );
+    });
+
+    it("preserves leading whitespace on indented chord lines", () => {
+      expect(autoFormatChordSheet("  Am  G")).toBe("  [Am]  [G]");
+    });
+
+    it("strips trailing whitespace from chord lines", () => {
+      expect(autoFormatChordSheet("Am   ")).toBe("[Am]");
+    });
+
     it("handles sharp and flat chords", () => {
       expect(autoFormatChordSheet("C# Bb F#m Ebm")).toBe("[C#] [Bb] [F#m] [Ebm]");
     });
