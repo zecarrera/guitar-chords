@@ -18,9 +18,11 @@ type AutoScrollReaderProps = {
   controlsPageChrome?: boolean;
   defaultSpeed: number;
   onPlaybackComplete?: () => void;
+  onCloseVideo?: () => void;
   sections: ChordSection[];
   songSlug?: string;
   videoLinks?: VideoLink[];
+  videoOpen?: boolean;
   documentLabel?: string | null;
   documentUrl?: string | null;
 };
@@ -418,9 +420,11 @@ export function AutoScrollReader({
   controlsPageChrome = false,
   defaultSpeed,
   onPlaybackComplete,
+  onCloseVideo,
   sections,
   songSlug,
   videoLinks = [],
+  videoOpen = false,
   documentLabel,
   documentUrl,
 }: AutoScrollReaderProps) {
@@ -617,6 +621,17 @@ export function AutoScrollReader({
   );
   const activeVideo =
     videoItems.find((video) => video.url === activeVideoUrl) ?? null;
+
+  // Auto-select the first video when the panel is opened externally
+  useEffect(() => {
+    if (videoOpen && videoItems.length > 0 && activeVideoUrl === null) {
+      setActiveVideoUrl(videoItems[0].url);
+    }
+    if (!videoOpen) {
+      setActiveVideoUrl(null);
+    }
+  }, [videoOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const chordLookup = useMemo(
     () => buildChordShapeLookup(chordDefinitions),
     [chordDefinitions],
@@ -813,7 +828,7 @@ export function AutoScrollReader({
         </div>
       ) : null}
 
-      {!isPlaying && (videoItems.length > 0 || documentUrl) ? (
+      {!isPlaying && videoOpen && videoItems.length > 0 ? (
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           {videoItems.length > 0 ? (
             <div
@@ -829,15 +844,13 @@ export function AutoScrollReader({
                     Tutorial and reference
                   </h2>
                 </div>
-                {activeVideo ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoUrl(null)}
-                    className="cursor-pointer rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5"
-                  >
-                    Close
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onCloseVideo?.()}
+                  className="cursor-pointer rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5"
+                >
+                  Close
+                </button>
               </div>
 
               <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
@@ -911,22 +924,6 @@ export function AutoScrollReader({
                   </div>
                 ))}
               </div>
-            </div>
-          ) : null}
-
-          {documentUrl ? (
-            <div className="song-source-document rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Source document
-              </p>
-              <a
-                href={documentUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex cursor-pointer rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-amber-300 transition hover:border-amber-300/40"
-              >
-                Open {documentLabel ?? "source document"}
-              </a>
             </div>
           ) : null}
         </aside>
