@@ -520,3 +520,144 @@ export async function updateScrollSpeedAction(slug: string, speed: number) {
   revalidatePath(`/songs/${slug}`);
   revalidatePath(`/manage/songs/${slug}`);
 }
+
+export async function createSongFromModalAction(formData: FormData) {
+  const title = readRequiredString(formData, "title");
+  const artistName = readRequiredString(formData, "artistName");
+  const capo = readOptionalNumber(formData, "capo") ?? 0;
+  const difficulty = readOptionalString(formData, "difficulty") ?? "";
+  const videoUrl = readOptionalString(formData, "videoUrl");
+  const extractedText = readOptionalMultilineString(formData, "extractedText");
+  const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
+  const usePdf = formData.get("contentType") === "pdf";
+
+  const resolvedText = usePdf && pdfUpload
+    ? await extractChordTextFromPdf(pdfUpload.fileData)
+    : extractedText
+      ? normalizeChordDocumentText(extractedText)
+      : null;
+
+  const slug = slugify(title);
+
+  // Find or create the artist
+  let artist = await prisma.artist.findFirst({ where: { name: artistName } });
+  if (!artist) {
+    artist = await prisma.artist.create({
+      data: { name: artistName, slug: slugify(artistName) },
+    });
+  }
+
+  await prisma.song.create({
+    data: {
+      title,
+      slug,
+      capo,
+      difficulty,
+      status: "DRAFT",
+      artist: { connect: { id: artist.id } },
+      videoLinks: videoUrl
+        ? { create: [{ label: "Tutorial", url: videoUrl, type: "TUTORIAL" }] }
+        : undefined,
+      documents: {
+        create: [
+          {
+            title: `${title} chord sheet`,
+            sourceType: "PDF",
+            extractedText: resolvedText,
+            scrollSpeed: 24,
+            fileName: usePdf && pdfUpload ? pdfUpload.fileName : null,
+            mimeType: usePdf && pdfUpload ? pdfUpload.mimeType : null,
+            fileData: usePdf && pdfUpload ? pdfUpload.fileData : null,
+          },
+        ],
+      },
+    },
+  });
+
+  revalidateLibrary();
+  redirect(`/manage/songs/${slug}`);
+}
+
+export async function updateSongFromModalAction(formData: FormData) {
+  const songId = readRequiredString(formData, "songId");
+  const title = readRequiredString(formData, "title");
+  const slugInput = readOptionalString(formData, "slug");
+  const artistId = readRequiredString(formData, "artistId");
+  const notes = readOptionalString(formData, "notes");
+  const capo = readOptionalNumber(formData, "capo");
+  const difficulty = readOptionalString(formData, "difficulty");
+  const status = readRequiredString(formData, "status");
+  const documentId = readOptionalString(formData, "documentId");
+  const documentTitle = readRequiredString(formData, "documentTitle");
+  const sourceType = readRequiredString(formData, "sourceType");
+  const fileUrl = readOptionalString(formData, "fileUrl");
+  const submittedExtractedText = readOptionalMultilineString(formData, "extractedText");
+  const scrollSpeed = readOptionalNumber(formData, "scrollSpeed");
+  const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
+  const genreIds = formData
+    .getAll("genreIds")
+    .filter((v): v is string => typeof v === "string");
+  const listIds = formData
+    .getAll("listIds")
+    .filter((v): v is string => typeof v === "string");
+
+  const slug = slugInput ? slugify(slugInput) : slugify(title);
+  const normalizedSourceType: "PDF" | "EXTERNAL_LINK" =
+    sourceType === "EXTERNAL_LINK" ? "EXTERNAL_LINK" : "PDF";
+  const normalizedSourceUrl =
+    normalizedSourceType === "EXTERNAL_LINK"
+      ? readRequiredString(formData, "sourceUrl")
+      : null;
+
+  const existingDocument = documentId
+    ? await prisma.chordDocument.findUnique({
+        where: { id: documentId },
+        select: { extractedText: true },
+      })
+    : null;
+  const extractedFromPdf =
+    normalizedSourceType === "PDF" && pdfUpload
+      ? await extractChordTextFromPdf(pdfUpload.fileData)
+      : null;
+  const extractedText =
+    extractedFromPdf &&
+    (!submittedExtractedText ||
+      submittedExtractedText === existingDocument?.extractedText)
+      ? extractedFromPdf
+      : submittedExtractedText;
+
+  const documentData = {
+    title: documentTitle,
+    sourceType: normalizedSourceType,
+    sourceUrl: normalizedSourceUrl,
+    fileUrl: normalizedSourceType === "PDF" ? fileUrl : null,
+    extractedText,
+    scrollSpeed,
+    ...(pdfUpload
+      ? { fileName: pdfUpload.fileName, mimeType: pdfUpload.mimeType, fileData: pdfUpload.fileData }
+      : {}),
+  };
+
+  await prisma.song.update({
+    where: { id: songId },
+    data: {
+      title,
+      slug,
+      notes,
+      capo,
+      difficulty,
+      status:
+        status === "PUBLISHED" ? "PUBLISHED" : status === "ARCHIVED" ? "ARCHIVED" : "DRAFT",
+      artist: { connect: { id: artistId } },
+      genres: { set: genreIds.map((id) => ({ id })) },
+      customLists: { set: listIds.map((id) => ({ id })) },
+      documents: documentId
+        ? { update: [{ where: { id: documentId }, data: documentData }] }
+        : { create: [documentData] },
+    },
+  });
+
+  revalidateLibrary();
+  revalidatePath(`/songs/${slug}`);
+  redirect("/manage");
+}

@@ -18,9 +18,11 @@ type AutoScrollReaderProps = {
   controlsPageChrome?: boolean;
   defaultSpeed: number;
   onPlaybackComplete?: () => void;
+  onCloseVideo?: () => void;
   sections: ChordSection[];
   songSlug?: string;
   videoLinks?: VideoLink[];
+  videoOpen?: boolean;
   documentLabel?: string | null;
   documentUrl?: string | null;
 };
@@ -321,7 +323,7 @@ function ChordLine({
     <div className="space-y-0">
       {showChords ? (
         <div
-          className="relative whitespace-pre text-amber-200 leading-[1.5]"
+          className="relative whitespace-pre text-cyan-400 leading-[1.5]"
           style={{
             width: `${Math.max(positionedChordLine.contentWidth, 1)}ch`,
             height: "1.5em",
@@ -418,9 +420,11 @@ export function AutoScrollReader({
   controlsPageChrome = false,
   defaultSpeed,
   onPlaybackComplete,
+  onCloseVideo,
   sections,
   songSlug,
   videoLinks = [],
+  videoOpen = false,
   documentLabel,
   documentUrl,
 }: AutoScrollReaderProps) {
@@ -456,10 +460,12 @@ export function AutoScrollReader({
   const fontScale = manualFontScale ?? savedFontScale ?? defaultFontScale;
   const readerViewportRatio =
     viewportSize && viewportSize.width >= 1024
-      ? 0.78
+      ? 0.85
       : viewportSize && viewportSize.width >= 640
-        ? 0.74
-        : 0.7;
+        ? 0.82
+        : isPlayModeActive
+          ? 0.80
+          : 0.72;
   const readerHeightStyle = viewportSize
     ? {
         height: `${Math.max(320, Math.round(viewportSize.height * readerViewportRatio))}px`,
@@ -615,6 +621,17 @@ export function AutoScrollReader({
   );
   const activeVideo =
     videoItems.find((video) => video.url === activeVideoUrl) ?? null;
+
+  // Auto-select the first video when the panel is opened externally
+  useEffect(() => {
+    if (videoOpen && videoItems.length > 0 && activeVideoUrl === null) {
+      setActiveVideoUrl(videoItems[0].url);
+    }
+    if (!videoOpen) {
+      setActiveVideoUrl(null);
+    }
+  }, [videoOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const chordLookup = useMemo(
     () => buildChordShapeLookup(chordDefinitions),
     [chordDefinitions],
@@ -664,120 +681,8 @@ export function AutoScrollReader({
           : ""
       }`}
     >
-      <div className="min-w-0 rounded-[2rem] border border-white/10 bg-slate-900/90 shadow-2xl shadow-black/20">
-        <div className="border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur sm:px-6">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setIsPlayModeActive(true);
-                setIsPlaying((playing) => !playing);
-              }}
-              className="inline-flex min-w-0 cursor-pointer items-center justify-center rounded-full bg-amber-300 px-4 py-2.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-200 sm:min-w-32 sm:px-5 sm:py-3 sm:text-sm"
-            >
-              {isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsPlaying(false);
-                setIsPlayModeActive(false);
-                scrollPositionRef.current = 0;
-                containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="inline-flex min-w-0 cursor-pointer items-center justify-center rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:min-w-24 sm:py-3 sm:text-sm"
-            >
-              Stop
-            </button>
-            <div className="rounded-full bg-white/5 px-3 py-2.5 text-xs font-medium text-slate-200 sm:px-4 sm:py-3 sm:text-sm">
-              {speed} px/s
-            </div>
-          </div>
-
-          <label className="mt-4 block">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Scroll speed
-            </span>
-            <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => updateSpeed(speed - speedButtonStep)}
-                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
-                aria-label="Decrease scroll speed"
-              >
-                -
-              </button>
-              <input
-                className="min-w-0 w-full cursor-pointer accent-amber-300"
-                type="range"
-                min={minimumScrollSpeed}
-                max={maximumScrollSpeed}
-                step={speedSliderStep}
-                value={speed}
-                onChange={(event) => updateSpeed(Number(event.target.value))}
-              />
-              <button
-                type="button"
-                onClick={() => updateSpeed(speed + speedButtonStep)}
-                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
-                aria-label="Increase scroll speed"
-              >
-                +
-              </button>
-            </div>
-          </label>
-
-          <label className="mt-4 block">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Lyrics size
-            </span>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="rounded-full bg-white/5 px-3 py-2.5 text-xs font-medium text-slate-200 sm:px-4 sm:py-3 sm:text-sm">
-                {fontScale}%
-              </div>
-              <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={() => updateFontScale(fontScale - fontScaleStep)}
-                  className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
-                  aria-label="Decrease lyrics size"
-                >
-                  -
-                </button>
-                <input
-                  className="min-w-0 w-full cursor-pointer accent-amber-300"
-                  type="range"
-                  min={minimumFontScale}
-                  max={maximumFontScale}
-                  step={fontScaleStep}
-                  value={fontScale}
-                  onChange={(event) => updateFontScale(Number(event.target.value))}
-                />
-                <button
-                  type="button"
-                  onClick={() => updateFontScale(fontScale + fontScaleStep)}
-                  className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:h-11 sm:w-11"
-                  aria-label="Increase lyrics size"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </label>
-
-          <label className="mt-4 flex cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              checked={showChords}
-              onChange={(event) => setShowChords(event.target.checked)}
-              className="h-4 w-4 cursor-pointer accent-amber-300"
-            />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Show chords
-            </span>
-          </label>
-        </div>
-
+      <div className="relative min-w-0">
+        {/* Chord sheet scroll area */}
         <div
           ref={containerRef}
           onScroll={(event) => {
@@ -785,18 +690,22 @@ export function AutoScrollReader({
             scrollPositionRef.current = event.currentTarget.scrollTop;
           }}
           style={readerHeightStyle}
-          className="min-w-0 h-[70vh] space-y-4 overflow-y-auto px-3 pt-4 pb-20 sm:h-[74vh] sm:space-y-6 sm:px-6 sm:pt-6 sm:pb-28 lg:h-[78vh]"
+          className="min-w-0 h-[72vh] space-y-3 overflow-y-auto pb-24 pt-2 sm:h-[78vh] sm:space-y-4 sm:pb-28 lg:h-[82vh]"
         >
           {sections.map((section, index) => (
             <div
               key={`${section.title}-${index}`}
-              className="min-w-0 rounded-3xl border border-white/8 bg-slate-950/70 p-4 sm:p-6"
+              className="min-w-0 px-1"
             >
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
-                {section.title}
-              </h3>
+              {section.title ? (
+                <div className="mb-3">
+                  <span className="inline-block rounded-full bg-slate-700/60 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-slate-200">
+                    {section.title}
+                  </span>
+                </div>
+              ) : null}
               <div
-                className="mt-3 min-w-0 max-w-full space-y-0.5 overflow-x-auto font-mono text-slate-100 [--reader-font-size:12px] [--reader-line-height:1.5rem] sm:mt-4 sm:space-y-1 sm:[--reader-font-size:15px] sm:[--reader-line-height:1.75rem] lg:[--reader-font-size:16px] lg:[--reader-line-height:2rem]"
+                className="min-w-0 max-w-full overflow-x-auto font-mono text-slate-100 [--reader-font-size:14px] [--reader-line-height:1.6rem] sm:[--reader-font-size:15px] sm:[--reader-line-height:1.75rem] lg:[--reader-font-size:16px] lg:[--reader-line-height:2rem]"
                 style={readerTypographyStyle}
               >
                 {section.lines.map((line, lineIndex) => (
@@ -811,6 +720,96 @@ export function AutoScrollReader({
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Fixed bottom control bar */}
+        <div
+          className="fixed bottom-0 inset-x-0 z-20 border-t border-white/10 bg-[#0d1421]/95 backdrop-blur-sm"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))", paddingTop: "0.75rem" }}
+        >
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4">
+          {/* Play / Pause */}
+          <button
+            type="button"
+            aria-label={isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
+            onClick={() => {
+              setIsPlayModeActive(true);
+              setIsPlaying((playing) => !playing);
+            }}
+            className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition hover:bg-blue-400 active:scale-95"
+          >
+            {isPlaying ? (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7 0a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75h-1.5a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+                <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+              </svg>
+            )}
+          </button>
+
+          {/* Speed control */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => updateSpeed(speed - speedButtonStep)}
+              aria-label="Decrease scroll speed"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 active:scale-95"
+            >
+              −
+            </button>
+            <span className="min-w-[2.5rem] text-center text-sm font-semibold text-white">
+              {+(speed / defaultSpeed).toFixed(1)}×
+            </span>
+            <button
+              type="button"
+              onClick={() => updateSpeed(speed + speedButtonStep)}
+              aria-label="Increase scroll speed"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-lg font-semibold text-white transition hover:border-white/30 hover:bg-white/5 active:scale-95"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Font size + show chords */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => updateFontScale(fontScale - fontScaleStep)}
+              aria-label="Decrease lyrics size"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/30 hover:bg-white/5 active:scale-95"
+            >
+              <span className="text-xs font-semibold">T</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => updateFontScale(fontScale + fontScaleStep)}
+              aria-label="Increase lyrics size"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/30 hover:bg-white/5 active:scale-95"
+            >
+              <span className="text-base font-bold">T</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowChords((v) => !v)}
+              aria-label={showChords ? "Hide chords" : "Show chords"}
+              className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border transition active:scale-95 ${
+                showChords
+                  ? "border-blue-400/50 bg-blue-500/20 text-blue-400"
+                  : "border-white/15 text-slate-500 hover:border-white/30 hover:bg-white/5"
+              }`}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                {showChords ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                )}
+              </svg>
+            </button>
+          </div>
+          </div>
         </div>
       </div>
 
@@ -829,7 +828,7 @@ export function AutoScrollReader({
         </div>
       ) : null}
 
-      {!isPlaying && (videoItems.length > 0 || documentUrl) ? (
+      {!isPlaying && videoOpen && videoItems.length > 0 ? (
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           {videoItems.length > 0 ? (
             <div
@@ -845,15 +844,13 @@ export function AutoScrollReader({
                     Tutorial and reference
                   </h2>
                 </div>
-                {activeVideo ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideoUrl(null)}
-                    className="cursor-pointer rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5"
-                  >
-                    Close
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onCloseVideo?.()}
+                  className="cursor-pointer rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5"
+                >
+                  Close
+                </button>
               </div>
 
               <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70">
@@ -927,22 +924,6 @@ export function AutoScrollReader({
                   </div>
                 ))}
               </div>
-            </div>
-          ) : null}
-
-          {documentUrl ? (
-            <div className="song-source-document rounded-3xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Source document
-              </p>
-              <a
-                href={documentUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex cursor-pointer rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-amber-300 transition hover:border-amber-300/40"
-              >
-                Open {documentLabel ?? "source document"}
-              </a>
             </div>
           ) : null}
         </aside>
