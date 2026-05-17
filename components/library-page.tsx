@@ -296,6 +296,7 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
   const [query, setQuery] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<SongRow | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<SongRow | null>(null);
 
   const filteredSongs = songs.filter((s) => {
     if (!query.trim()) return true;
@@ -381,12 +382,9 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
                       className="cursor-pointer text-slate-500 transition hover:text-white">
                       <PencilIcon />
                     </button>
-                    <form action={deleteSongAction}>
-                      <input type="hidden" name="songId" value={song.id} />
-                      <button type="submit" aria-label="Delete song" className="cursor-pointer text-slate-600 transition hover:text-rose-400">
-                        <TrashIcon />
-                      </button>
-                    </form>
+                    <button type="button" onClick={() => setConfirmDelete(song)} aria-label="Delete song" className="cursor-pointer text-slate-600 transition hover:text-rose-400">
+                      <TrashIcon />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -426,6 +424,30 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
           customLists={customLists}
           onClose={() => setEditingSong(null)}
         />
+      )}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} aria-hidden />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[#131f35] p-6 shadow-2xl">
+            <h2 className="mb-2 text-lg font-semibold text-white">Delete song?</h2>
+            <p className="mb-6 text-sm text-slate-400">
+              <span className="font-medium text-white">{confirmDelete.title}</span> will be permanently deleted and cannot be recovered.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setConfirmDelete(null)}
+                className="cursor-pointer rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/30 hover:text-white">
+                Cancel
+              </button>
+              <form action={deleteSongAction} onSubmit={() => setConfirmDelete(null)}>
+                <input type="hidden" name="songId" value={confirmDelete.id} />
+                <button type="submit"
+                  className="cursor-pointer rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500">
+                  Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
