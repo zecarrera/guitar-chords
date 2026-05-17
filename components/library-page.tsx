@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState } from "react";
 
 import {
+  createArtistAction,
   createSongFromModalAction,
+  deleteArtistAction,
   deleteSongAction,
+  updateArtistAction,
   updateSongFromModalAction,
 } from "@/app/manage/actions";
 import { autoFormatChordSheet } from "@/lib/auto-format";
@@ -290,6 +292,58 @@ function ModalFooter({ onClose, submitLabel }: { onClose: () => void; submitLabe
   );
 }
 
+/* ─── Artist modals ──────────────────────────────────── */
+function AddArtistModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[#131f35] p-6 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Add New Artist</h2>
+          <button type="button" onClick={onClose} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/15 text-slate-400 transition hover:text-white">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <form action={createArtistAction}>
+          <Field label="Artist Name">
+            <input name="name" required autoFocus placeholder="Artist name" className={inputCls} />
+          </Field>
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/30 hover:text-white">Cancel</button>
+            <button type="submit" className="cursor-pointer rounded-xl bg-blue-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-400">Add Artist</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditArtistModal({ artist, onClose }: { artist: ArtistRow; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[#131f35] p-6 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Edit Artist</h2>
+          <button type="button" onClick={onClose} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/15 text-slate-400 transition hover:text-white">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <form action={updateArtistAction}>
+          <input type="hidden" name="id" value={artist.id} />
+          <Field label="Artist Name">
+            <input name="name" required autoFocus defaultValue={artist.name} className={inputCls} />
+          </Field>
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="cursor-pointer rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/30 hover:text-white">Cancel</button>
+            <button type="submit" className="cursor-pointer rounded-xl bg-blue-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-400">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Library Page ──────────────────────────────── */
 export function LibraryPage({ songs, artists, genres, customLists }: LibraryPageProps) {
   const [activeTab, setActiveTab] = useState<"songs" | "artists">("songs");
@@ -297,6 +351,9 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<SongRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<SongRow | null>(null);
+  const [addArtistOpen, setAddArtistOpen] = useState(false);
+  const [editingArtist, setEditingArtist] = useState<ArtistRow | null>(null);
+  const [confirmDeleteArtist, setConfirmDeleteArtist] = useState<ArtistRow | null>(null);
 
   const filteredSongs = songs.filter((s) => {
     if (!query.trim()) return true;
@@ -328,13 +385,19 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
         {/* Page header */}
         <div className="mb-5 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-white">Library</h1>
-          <button type="button" onClick={() => setAddModalOpen(true)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add Song
-          </button>
+          {activeTab === "songs" ? (
+            <button type="button" onClick={() => setAddModalOpen(true)}
+              className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Add Song
+            </button>
+          ) : (
+            <button type="button" onClick={() => setAddArtistOpen(true)}
+              className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Add Artist
+            </button>
+          )}
         </div>
 
         {/* Tabs + search */}
@@ -351,7 +414,8 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
             <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
-            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search..."
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder={activeTab === "songs" ? "Search songs..." : "Search artists..."}
               className="w-full rounded-xl border border-white/10 bg-[#131f35] py-2 pl-9 pr-4 text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-white/20" />
           </div>
         </div>
@@ -391,24 +455,31 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
             </div>
           </div>
         ) : (
-          /* Artists table */
-          <div className="overflow-hidden rounded-2xl border border-white/10">
-            <div className="grid grid-cols-[2fr_0.5fr] gap-4 border-b border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <span>Artist</span><span>Songs</span>
-            </div>
-            <div className="divide-y divide-white/8">
-              {filteredArtists.length === 0 ? (
-                <p className="px-5 py-8 text-center text-sm text-slate-500">No artists found.</p>
-              ) : filteredArtists.map((artist) => (
-                <div key={artist.id} className="grid grid-cols-[2fr_0.5fr] gap-4 px-5 py-3.5 text-sm text-slate-300 transition hover:bg-white/[0.03]">
-                  <Link href={`/artists/${encodeURIComponent(artist.name)}`} className="font-semibold text-white transition hover:text-blue-400">
-                    {artist.name}
-                  </Link>
-                  <span>{artist._count.songs}</span>
+          /* Artists card grid */
+          filteredArtists.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-500">No artists found.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              {filteredArtists.map((artist) => (
+                <div key={artist.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition hover:bg-white/[0.06]">
+                  <div>
+                    <p className="font-semibold text-white">{artist.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{artist._count.songs} {artist._count.songs === 1 ? "song" : "songs"}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setEditingArtist(artist)} aria-label="Edit artist"
+                      className="cursor-pointer text-slate-500 transition hover:text-white">
+                      <PencilIcon />
+                    </button>
+                    <button type="button" onClick={() => setConfirmDeleteArtist(artist)} aria-label="Delete artist"
+                      className="cursor-pointer text-slate-600 transition hover:text-rose-400">
+                      <TrashIcon />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )
         )}
       </div>
 
@@ -442,6 +513,35 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
                 <input type="hidden" name="songId" value={confirmDelete.id} />
                 <button type="submit"
                   className="cursor-pointer rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500">
+                  Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+      {addArtistOpen && <AddArtistModal onClose={() => setAddArtistOpen(false)} />}
+      {editingArtist && <EditArtistModal artist={editingArtist} onClose={() => setEditingArtist(null)} />}
+      {confirmDeleteArtist && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDeleteArtist(null)} aria-hidden />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[#131f35] p-6 shadow-2xl">
+            <h2 className="mb-2 text-lg font-semibold text-white">Delete artist?</h2>
+            <p className="mb-6 text-sm text-slate-400">
+              <span className="font-medium text-white">{confirmDeleteArtist.name}</span> will be permanently deleted.
+              {confirmDeleteArtist._count.songs > 0 && (
+                <span className="mt-1 block text-amber-400">This artist has {confirmDeleteArtist._count.songs} song(s) — remove them first.</span>
+              )}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setConfirmDeleteArtist(null)}
+                className="cursor-pointer rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/30 hover:text-white">
+                Cancel
+              </button>
+              <form action={deleteArtistAction} onSubmit={() => setConfirmDeleteArtist(null)}>
+                <input type="hidden" name="id" value={confirmDeleteArtist.id} />
+                <button type="submit" disabled={confirmDeleteArtist._count.songs > 0}
+                  className="cursor-pointer rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40">
                   Delete
                 </button>
               </form>
