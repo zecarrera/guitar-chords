@@ -520,3 +520,60 @@ export async function updateScrollSpeedAction(slug: string, speed: number) {
   revalidatePath(`/songs/${slug}`);
   revalidatePath(`/manage/songs/${slug}`);
 }
+
+export async function createSongFromModalAction(formData: FormData) {
+  const title = readRequiredString(formData, "title");
+  const artistName = readRequiredString(formData, "artistName");
+  const capo = readOptionalNumber(formData, "capo") ?? 0;
+  const difficulty = readOptionalString(formData, "difficulty") ?? "";
+  const videoUrl = readOptionalString(formData, "videoUrl");
+  const extractedText = readOptionalMultilineString(formData, "extractedText");
+  const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
+  const usePdf = formData.get("contentType") === "pdf";
+
+  const resolvedText = usePdf && pdfUpload
+    ? await extractChordTextFromPdf(pdfUpload.fileData)
+    : extractedText
+      ? normalizeChordDocumentText(extractedText)
+      : null;
+
+  const slug = slugify(title);
+
+  // Find or create the artist
+  let artist = await prisma.artist.findFirst({ where: { name: artistName } });
+  if (!artist) {
+    artist = await prisma.artist.create({
+      data: { name: artistName, slug: slugify(artistName) },
+    });
+  }
+
+  await prisma.song.create({
+    data: {
+      title,
+      slug,
+      capo,
+      difficulty,
+      status: "DRAFT",
+      artist: { connect: { id: artist.id } },
+      videoLinks: videoUrl
+        ? { create: [{ label: "Tutorial", url: videoUrl, type: "TUTORIAL" }] }
+        : undefined,
+      documents: {
+        create: [
+          {
+            title: `${title} chord sheet`,
+            sourceType: "PDF",
+            extractedText: resolvedText,
+            scrollSpeed: 24,
+            fileName: usePdf && pdfUpload ? pdfUpload.fileName : null,
+            mimeType: usePdf && pdfUpload ? pdfUpload.mimeType : null,
+            fileData: usePdf && pdfUpload ? pdfUpload.fileData : null,
+          },
+        ],
+      },
+    },
+  });
+
+  revalidateLibrary();
+  redirect(`/manage/songs/${slug}`);
+}
