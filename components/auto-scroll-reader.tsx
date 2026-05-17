@@ -709,9 +709,10 @@ export function AutoScrollReader({
 
         {/* Fixed bottom control bar */}
         <div
-          className="fixed bottom-0 inset-x-0 z-20 flex items-center justify-between gap-2 border-t border-white/10 bg-[#0d1421]/95 px-4 backdrop-blur-sm"
+          className="fixed bottom-0 inset-x-0 z-20 border-t border-white/10 bg-[#0d1421]/95 backdrop-blur-sm"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))", paddingTop: "0.75rem" }}
         >
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 px-4">
           {/* Play / Pause */}
           <button
             type="button"
@@ -792,6 +793,7 @@ export function AutoScrollReader({
                 )}
               </svg>
             </button>
+          </div>
           </div>
         </div>
       </div>
