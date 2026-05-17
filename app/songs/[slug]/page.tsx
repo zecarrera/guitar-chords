@@ -84,7 +84,12 @@ export default async function SongDetailPage({
               <h1 className="text-xl font-bold leading-tight text-white">
                 {song.title}
               </h1>
-              <p className="mt-0.5 text-sm text-slate-400">{song.artist}</p>
+              <Link
+                href={`/artists/${encodeURIComponent(song.artist)}`}
+                className="mt-0.5 text-sm text-slate-400 transition hover:text-slate-200"
+              >
+                {song.artist}
+              </Link>
               {firstTutorialVideo ? (
                 <a
                   href={firstTutorialVideo.url}
