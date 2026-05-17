@@ -40,22 +40,24 @@ export function NavTabs() {
   const pathname = usePathname();
 
   return (
-    <nav className="site-header flex items-stretch border-b border-white/10 bg-[#0d1421]">
-      {tabs.map(({ href, label, Icon, matchExact }) => {
-        const isActive = matchExact ? pathname === href : pathname.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={`flex flex-1 flex-col items-center gap-1 pb-3 pt-2.5 text-xs font-medium transition-colors ${
-              isActive ? "text-blue-400" : "text-slate-500 hover:text-slate-300"
-            }`}
-          >
-            <Icon />
-            <span>{label}</span>
-          </Link>
-        );
-      })}
+    <nav className="site-header border-b border-white/10 bg-[#0d1421]">
+      <div className="mx-auto flex w-full max-w-2xl items-stretch">
+        {tabs.map(({ href, label, Icon, matchExact }) => {
+          const isActive = matchExact ? pathname === href : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-1 flex-col items-center gap-1 pb-3 pt-2.5 text-xs font-medium transition-colors ${
+                isActive ? "text-blue-400" : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              <Icon />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
