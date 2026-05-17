@@ -121,29 +121,31 @@ function ContentEditor({ defaultText }: { defaultText?: string | null }) {
         </div>
       </div>
 
-      {contentType === "text" ? (
-        <div className="flex flex-1 flex-col">
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs text-slate-500">Format: [Chord]lyrics</span>
-            <button type="button" onClick={handleAutoFormat}
-              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${formatDone ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"}`}>
-              {formatDone ? "Done!" : "Auto Format"}
-            </button>
-          </div>
-          <textarea ref={textareaRef} name="extractedText" rows={14}
-            defaultValue={defaultText ?? ""}
-            placeholder="[Em7]Today is gonna be the day..."
-            className="w-full resize-none rounded-xl border border-white/10 bg-[#0d1421] px-3.5 py-3 font-mono text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-blue-500/50" />
-        </div>
-      ) : (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-[#0d1421] py-10 transition hover:border-white/30">
-          <svg className="h-8 w-8 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      {contentType === "pdf" && (
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-[#0d1421] py-6 transition hover:border-white/30">
+          <svg className="h-7 w-7 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
           <span className="text-sm text-slate-400">Click to upload PDF</span>
           <input type="file" name="pdfFile" accept="application/pdf" className="hidden" />
         </label>
       )}
+
+      <div className="flex flex-1 flex-col">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-xs text-slate-500">
+            {contentType === "pdf" ? "Parsed PDF content (editable)" : "Format: [Chord]lyrics"}
+          </span>
+          <button type="button" onClick={handleAutoFormat}
+            className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${formatDone ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"}`}>
+            {formatDone ? "Done!" : "Auto Format"}
+          </button>
+        </div>
+        <textarea ref={textareaRef} name="extractedText" rows={contentType === "pdf" ? 10 : 14}
+          defaultValue={defaultText ?? ""}
+          placeholder={contentType === "pdf" ? "Parsed text will appear here after upload…" : "[Em7]Today is gonna be the day..."}
+          className="w-full resize-none rounded-xl border border-white/10 bg-[#0d1421] px-3.5 py-3 font-mono text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-blue-500/50" />
+      </div>
     </div>
   );
 }
