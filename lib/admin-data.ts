@@ -6,6 +6,8 @@ export async function getManageDashboardData() {
       orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
       include: {
         artist: true,
+        genres: { select: { id: true } },
+        customLists: { select: { id: true } },
         documents: {
           select: {
             id: true,

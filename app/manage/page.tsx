@@ -15,7 +15,7 @@ export default async function ManagePage() {
     );
   }
 
-  const { artists, songs } = await getManageDashboardData();
+  const { artists, songs, genres, customLists } = await getManageDashboardData();
 
-  return <LibraryPage songs={songs} artists={artists} />;
+  return <LibraryPage songs={songs} artists={artists} genres={genres} customLists={customLists} />;
 }
