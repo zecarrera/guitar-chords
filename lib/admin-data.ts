@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 export async function getManageDashboardData() {
   const [songs, artists, genres, customLists] = await Promise.all([
     prisma.song.findMany({
-      orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
+      orderBy: [{ title: "asc" }],
       include: {
         artist: true,
         genres: { select: { id: true } },
