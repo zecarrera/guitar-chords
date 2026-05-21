@@ -429,6 +429,7 @@ export function AutoScrollReader({
   documentUrl,
 }: AutoScrollReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const chordContentRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef(0);
   const videoPlayerRef = useRef<HTMLDivElement>(null);
   const savedSpeed = useSyncExternalStore(
@@ -445,6 +446,7 @@ export function AutoScrollReader({
   const [manualFontScale, setManualFontScale] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPlayModeActive, setIsPlayModeActive] = useState(false);
+  const [playFitScale, setPlayFitScale] = useState(1);
   const [showChords, setShowChords] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState<{
@@ -472,8 +474,8 @@ export function AutoScrollReader({
       }
     : undefined;
   const readerTypographyStyle = {
-    fontSize: `calc(var(--reader-font-size) * ${fontScale / 100})`,
-    lineHeight: `calc(var(--reader-line-height) * ${fontScale / 100})`,
+    fontSize: `calc(var(--reader-font-size) * ${fontScale / 100} * ${isPlayModeActive ? playFitScale : 1})`,
+    lineHeight: `calc(var(--reader-line-height) * ${fontScale / 100} * ${isPlayModeActive ? playFitScale : 1})`,
   };
 
   function updateSpeed(nextSpeed: number) {
@@ -551,6 +553,34 @@ export function AutoScrollReader({
       window.visualViewport?.removeEventListener("resize", updateViewportSize);
     };
   }, []);
+
+  // Compute a font-size scale factor so content fits horizontally without side-scrolling in play mode.
+  // Chord positions use `ch` units, which scale with font-size, so alignment is preserved.
+  useEffect(() => {
+    if (!isPlayModeActive) {
+      setPlayFitScale(1);
+      return;
+    }
+
+    const el = chordContentRef.current;
+
+    if (!el) {
+      return;
+    }
+
+    // Run after paint so the DOM reflects current font-size and content.
+    const frameId = requestAnimationFrame(() => {
+      const { clientWidth, scrollWidth } = el;
+
+      if (scrollWidth > clientWidth) {
+        setPlayFitScale(clientWidth / scrollWidth);
+      } else {
+        setPlayFitScale(1);
+      }
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [isPlayModeActive, viewportSize, fontScale]);
 
   useEffect(() => {
     if (!controlsPageChrome) {
@@ -690,36 +720,44 @@ export function AutoScrollReader({
             scrollPositionRef.current = event.currentTarget.scrollTop;
           }}
           style={readerHeightStyle}
-          className="min-w-0 h-[72vh] space-y-3 overflow-y-auto pb-24 pt-2 sm:h-[78vh] sm:space-y-4 sm:pb-28 lg:h-[82vh]"
+          className="min-w-0 h-[72vh] space-y-3 overflow-y-auto overflow-x-hidden pb-24 pt-2 sm:h-[78vh] sm:space-y-4 sm:pb-28 lg:h-[82vh]"
         >
-          {sections.map((section, index) => (
-            <div
-              key={`${section.title}-${index}`}
-              className="min-w-0 px-1"
-            >
-              {section.title ? (
-                <div className="mb-3">
-                  <span className="inline-block rounded-full bg-slate-700/60 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-slate-200">
-                    {section.title}
-                  </span>
-                </div>
-              ) : null}
+          {/*
+            In non-play mode: this wrapper is an overflow-x-auto scroll container so
+            wide chord lines can be side-scrolled.
+            In play mode: no overflow-x so content naturally propagates its true scrollWidth
+            up to this element, allowing us to measure and apply a font-size scale factor.
+          */}
+          <div ref={chordContentRef} className={isPlayModeActive ? undefined : "overflow-x-auto"}>
+            {sections.map((section, index) => (
               <div
-                className="min-w-0 max-w-full overflow-x-auto font-mono text-slate-100 [--reader-font-size:14px] [--reader-line-height:1.6rem] sm:[--reader-font-size:15px] sm:[--reader-line-height:1.75rem] lg:[--reader-font-size:16px] lg:[--reader-line-height:2rem]"
-                style={readerTypographyStyle}
+                key={`${section.title}-${index}`}
+                className="min-w-0 px-1"
               >
-                {section.lines.map((line, lineIndex) => (
-                  <ChordLine
-                    key={`${section.title}-${index}-line-${lineIndex}`}
-                    line={line}
-                    onHideChordTooltip={hideChordTooltip}
-                    onShowChordTooltip={showChordTooltip}
-                    showChords={showChords}
-                  />
-                ))}
+                {section.title ? (
+                  <div className="mb-3">
+                    <span className="inline-block rounded-full bg-slate-700/60 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-slate-200">
+                      {section.title}
+                    </span>
+                  </div>
+                ) : null}
+                <div
+                  className="min-w-0 font-mono text-slate-100 [--reader-font-size:14px] [--reader-line-height:1.6rem] sm:[--reader-font-size:15px] sm:[--reader-line-height:1.75rem] lg:[--reader-font-size:16px] lg:[--reader-line-height:2rem]"
+                  style={readerTypographyStyle}
+                >
+                  {section.lines.map((line, lineIndex) => (
+                    <ChordLine
+                      key={`${section.title}-${index}-line-${lineIndex}`}
+                      line={line}
+                      onHideChordTooltip={hideChordTooltip}
+                      onShowChordTooltip={showChordTooltip}
+                      showChords={showChords}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Fixed bottom control bar */}
