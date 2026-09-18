@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { autoFormatChordSheet } from "@/lib/auto-format";
+import {
+  applyAutoFormatFixes,
+  autoFormatChordSheet,
+} from "@/lib/auto-format";
 
 describe("autoFormatChordSheet", () => {
   it("preserves bare paired notation and exact source columns", () => {
@@ -77,16 +80,26 @@ describe("autoFormatChordSheet", () => {
     );
   });
 
-  it("preserves section boundaries while normalizing outer whitespace", () => {
-    const result = autoFormatChordSheet("\nVerse\nLine\n\n\nChorus\nLine\n");
+  it("reports safe cleanup without mutating analyzed text", () => {
+    const input = "\nVerse\nLine  \n\n\nChorus\nLine\n";
+    const result = autoFormatChordSheet(input);
 
-    expect(result.formattedText).toBe("Verse\nLine\n\nChorus\nLine");
+    expect(result.analyzedText).toBe(input);
+    expect(result.formattedText).toBe(input);
+    expect(result.projectedText).toBe("Verse\nLine\n\nChorus\nLine");
+    expect(result.safeFixes.map((fix) => fix.code)).toEqual([
+      "trailing-whitespace",
+      "outer-blank-space",
+      "blank-line-runs",
+    ]);
   });
 
   it("is idempotent", () => {
     const input = "Verse\nAm         G\nSome lyrics\n\nChorus\n[C]More";
     const once = autoFormatChordSheet(input);
-    const twice = autoFormatChordSheet(once.formattedText);
+    const application = applyAutoFormatFixes(input, once);
+    expect(application.status).toBe("no-fixes");
+    const twice = autoFormatChordSheet(once.projectedText);
 
     expect(twice).toEqual(once);
   });
@@ -97,5 +110,51 @@ describe("autoFormatChordSheet", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.recognizedPairs).toEqual([]);
     expect(result.instrumentalRows).toEqual([]);
+  });
+
+  it("applies every safe fix atomically for the exact source", () => {
+    const source = "\r\nVerse\r\n\tAm\tG  \r\nLyrics\r\n";
+    const analysis = autoFormatChordSheet(source);
+
+    expect(applyAutoFormatFixes(source, analysis)).toEqual({
+      status: "applied",
+      text: "Verse\n        Am      G\nLyrics",
+    });
+  });
+
+  it("rejects stale and empty fix plans without output text", () => {
+    const analysis = autoFormatChordSheet("\nVerse\n");
+
+    expect(applyAutoFormatFixes("Edited", analysis)).toEqual({
+      status: "stale",
+    });
+    expect(
+      applyAutoFormatFixes(
+        "Verse",
+        autoFormatChordSheet("Verse"),
+      ),
+    ).toEqual({ status: "no-fixes" });
+  });
+
+  it("keeps semantic recommendations outside the safe-fix plan after reanalysis", () => {
+    const source = "\nVerse\nAm G x2  \nSing it\n";
+    const analysis = autoFormatChordSheet(source);
+    const application = applyAutoFormatFixes(source, analysis);
+
+    expect(analysis.safeFixes.map((fix) => fix.code)).not.toContain(
+      "ambiguous-mixed-row",
+    );
+    expect(application).toEqual({
+      status: "applied",
+      text: "Verse\nAm G x2\nSing it",
+    });
+
+    if (application.status === "applied") {
+      const updated = autoFormatChordSheet(application.text);
+      expect(updated.safeFixes).toEqual([]);
+      expect(updated.diagnostics).toContainEqual(
+        expect.objectContaining({ code: "ambiguous-mixed-row" }),
+      );
+    }
   });
 });

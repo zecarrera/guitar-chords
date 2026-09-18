@@ -4,9 +4,11 @@ import { useRef, useState } from "react";
 
 import { AutoFormatFeedback } from "@/components/auto-format-feedback";
 import {
+  applyAutoFormatFixes,
   autoFormatChordSheet,
   type AutoFormatResult,
 } from "@/lib/auto-format";
+import { chordDocumentTabSize } from "@/lib/chord-document-text";
 
 type SourceType = "PDF" | "EXTERNAL_LINK";
 
@@ -51,14 +53,37 @@ export function SongDocumentFields({
   const isExternalLink = sourceType === "EXTERNAL_LINK";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [formatResult, setFormatResult] = useState<AutoFormatResult | null>(null);
+  const [formatError, setFormatError] = useState<string | null>(null);
 
   function handleAutoFormat() {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    const result = autoFormatChordSheet(textarea.value);
-    textarea.value = result.formattedText;
+    setFormatResult(autoFormatChordSheet(textarea.value));
+    setFormatError(null);
+  }
+
+  function handleApplySafeFixes() {
+    const textarea = textareaRef.current;
+
+    if (!textarea || !formatResult) {
+      return;
+    }
+
+    const application = applyAutoFormatFixes(textarea.value, formatResult);
+
+    if (application.status !== "applied") {
+      setFormatError(
+        application.status === "stale"
+          ? "Content changed after analysis. Analyze again before applying fixes."
+          : "No safe fixes are available to apply.",
+      );
+      return;
+    }
+
+    textarea.value = application.text;
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
-    setFormatResult(result);
+    setFormatResult(autoFormatChordSheet(application.text));
+    setFormatError(null);
   }
 
   return (
@@ -162,15 +187,25 @@ export function SongDocumentFields({
           name="extractedText"
           rows={extractedTextRows}
           defaultValue={extractedTextDefaultValue}
-          onChange={() => setFormatResult(null)}
+          onChange={() => {
+            setFormatResult(null);
+            setFormatError(null);
+          }}
+          style={{ tabSize: chordDocumentTabSize }}
           className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 font-mono text-sm text-white"
           placeholder={"Verse\nG         D\nLine one and line two"}
         />
-        {formatResult ? <AutoFormatFeedback result={formatResult} /> : null}
+        {formatResult ? (
+          <AutoFormatFeedback
+            applicationError={formatError}
+            onApplySafeFixes={handleApplySafeFixes}
+            result={formatResult}
+          />
+        ) : null}
         <p className="text-xs leading-5 text-slate-400">
           {isExternalLink
-            ? "Optional: paste inline [Chord]lyrics or aligned bare/bracketed chord rows, or add them later."
-            : "Aligned bare or bracketed chord rows are supported. Leave existing text untouched when replacing a PDF to refresh it automatically."}
+            ? "Optional: paste inline [Chord]lyrics or aligned bare/bracketed chord rows. Analysis is non-mutating; only safe whitespace fixes are automatic."
+            : "Aligned bare or bracketed chord rows are supported. Analysis is non-mutating; musical recommendations require manual review."}
         </p>
       </label>
 

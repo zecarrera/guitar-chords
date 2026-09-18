@@ -1,5 +1,8 @@
 import { isKnownChordName } from "@/lib/chord-library";
-import { normalizeChordDocumentText } from "@/lib/chord-document-text";
+import {
+  planChordDocumentFixes,
+  type ChordDocumentFixSummary,
+} from "@/lib/chord-document-text";
 import {
   classifyChordRow,
   parseInlineChordTokens,
@@ -29,12 +32,15 @@ export type RecognizedChordPair = RecognizedChordRow & {
 };
 
 export type AutoFormatResult = {
+  analyzedText: string;
   diagnostics: ChordSheetDiagnostic[];
   formattedText: string;
   inlineLines: number[];
   instrumentalRows: RecognizedChordRow[];
   missingDiagrams: Array<{ line: number; name: string }>;
+  projectedText: string;
   recognizedPairs: RecognizedChordPair[];
+  safeFixes: ChordDocumentFixSummary[];
 };
 
 function rowSummary(
@@ -52,8 +58,8 @@ function rowSummary(
 }
 
 export function autoFormatChordSheet(text: string): AutoFormatResult {
-  const formattedText = normalizeChordDocumentText(text);
-  const lines = formattedText ? formattedText.split("\n") : [];
+  const fixPlan = planChordDocumentFixes(text);
+  const lines = text ? text.split(/\r\n|\r|\n/) : [];
   const classifications = lines.map(classifyChordRow);
   const diagnostics: ChordSheetDiagnostic[] = [];
   const inlineLines: number[] = [];
@@ -123,11 +129,41 @@ export function autoFormatChordSheet(text: string): AutoFormatResult {
   }
 
   return {
+    analyzedText: text,
     diagnostics,
-    formattedText,
+    formattedText: text,
     inlineLines,
     instrumentalRows,
     missingDiagrams,
+    projectedText: fixPlan.projectedText,
     recognizedPairs,
+    safeFixes: fixPlan.fixes,
+  };
+}
+
+export type ApplyAutoFormatFixesResult =
+  | {
+      status: "applied";
+      text: string;
+    }
+  | {
+      status: "no-fixes" | "stale";
+    };
+
+export function applyAutoFormatFixes(
+  currentText: string,
+  analysis: AutoFormatResult,
+): ApplyAutoFormatFixesResult {
+  if (currentText !== analysis.analyzedText) {
+    return { status: "stale" };
+  }
+
+  if (analysis.safeFixes.length === 0) {
+    return { status: "no-fixes" };
+  }
+
+  return {
+    status: "applied",
+    text: analysis.projectedText,
   };
 }

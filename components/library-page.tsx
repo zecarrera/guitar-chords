@@ -12,9 +12,11 @@ import {
 } from "@/app/manage/actions";
 import { AutoFormatFeedback } from "@/components/auto-format-feedback";
 import {
+  applyAutoFormatFixes,
   autoFormatChordSheet,
   type AutoFormatResult,
 } from "@/lib/auto-format";
+import { chordDocumentTabSize } from "@/lib/chord-document-text";
 
 /* ─── Types ─────────────────────────────────────────── */
 
@@ -103,14 +105,37 @@ function ContentEditor({ defaultText }: { defaultText?: string | null }) {
   const [contentType, setContentType] = useState<"text" | "pdf">("text");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [formatResult, setFormatResult] = useState<AutoFormatResult | null>(null);
+  const [formatError, setFormatError] = useState<string | null>(null);
 
   function handleAutoFormat() {
     const ta = textareaRef.current;
     if (!ta) return;
-    const result = autoFormatChordSheet(ta.value);
-    ta.value = result.formattedText;
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-    setFormatResult(result);
+    setFormatResult(autoFormatChordSheet(ta.value));
+    setFormatError(null);
+  }
+
+  function handleApplySafeFixes() {
+    const textarea = textareaRef.current;
+
+    if (!textarea || !formatResult) {
+      return;
+    }
+
+    const application = applyAutoFormatFixes(textarea.value, formatResult);
+
+    if (application.status !== "applied") {
+      setFormatError(
+        application.status === "stale"
+          ? "Content changed after analysis. Analyze again before applying fixes."
+          : "No safe fixes are available to apply.",
+      );
+      return;
+    }
+
+    textarea.value = application.text;
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    setFormatResult(autoFormatChordSheet(application.text));
+    setFormatError(null);
   }
 
   return (
@@ -151,14 +176,26 @@ function ContentEditor({ defaultText }: { defaultText?: string | null }) {
         </div>
         <textarea ref={textareaRef} name="extractedText" rows={contentType === "pdf" ? 10 : 14}
           defaultValue={defaultText ?? ""}
-          onChange={() => setFormatResult(null)}
+          onChange={() => {
+            setFormatResult(null);
+            setFormatError(null);
+          }}
           placeholder={contentType === "pdf" ? "Parsed text will appear here after upload…" : "Verse\nEm7       G\nToday is gonna be the day..."}
+          style={{ tabSize: chordDocumentTabSize }}
           className="w-full resize-none rounded-xl border border-white/10 bg-[#0d1421] px-3.5 py-3 font-mono text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-blue-500/50" />
         {formatResult ? (
           <div className="mt-2">
-            <AutoFormatFeedback result={formatResult} />
+            <AutoFormatFeedback
+              applicationError={formatError}
+              onApplySafeFixes={handleApplySafeFixes}
+              result={formatResult}
+            />
           </div>
         ) : null}
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Analysis does not change your text. Safe whitespace fixes can be
+          applied together; musical recommendations remain for manual review.
+        </p>
       </div>
     </div>
   );
