@@ -1,17 +1,22 @@
-export type PositionedChord = {
-  column: number;
-  label: string;
-  name: string;
-};
+import type { AnchoredChordLine, ChordAnnotation } from "@/lib/types";
+
+export type PositionedChord = ChordAnnotation;
 
 export type PositionedChordLine = {
   chords: PositionedChord[];
   contentWidth: number;
+  kind: "instrumental" | "lyrics";
   lyricText: string;
 };
 
+export type LaidOutChord = PositionedChord & {
+  column: number;
+  lane: number;
+};
+
 export type ChordLineRow = {
-  chords: PositionedChord[];
+  chords: LaidOutChord[];
+  laneCount: number;
   lyricText: string;
 };
 
@@ -20,10 +25,26 @@ const chordTokenPattern = /\[([^[\]]+)\]/g;
 /**
  * Parses a raw chord sheet line (e.g. "[G] Harbor lights are [D] drifting
  * slow") into a lyric-only string plus a list of chord annotations, where
- * each chord's `column` is a character offset into the lyric string. Returns
- * `null` when the line has no `[Chord]` tokens at all.
+ * each chord's `anchorColumn` is an immutable character offset into the lyric
+ * string. Returns `null` when the line has no `[Chord]` tokens at all.
  */
-export function buildPositionedChordLine(line: string): PositionedChordLine | null {
+export function buildPositionedChordLine(
+  line: string | AnchoredChordLine,
+): PositionedChordLine | null {
+  if (typeof line !== "string") {
+    return {
+      chords: line.chords,
+      contentWidth: Math.max(
+        line.lyricText.length,
+        ...line.chords.map(
+          (chord) => chord.anchorColumn + chord.label.length,
+        ),
+      ),
+      kind: "lyrics",
+      lyricText: line.lyricText,
+    };
+  }
+
   const matches = Array.from(line.matchAll(chordTokenPattern));
 
   if (matches.length === 0) {
@@ -33,7 +54,6 @@ export function buildPositionedChordLine(line: string): PositionedChordLine | nu
   let lastIndex = 0;
   let lyricText = "";
   let lyricCursor = 0;
-  let minimumChordColumn = 0;
   const chords: PositionedChord[] = [];
 
   for (const match of matches) {
@@ -45,24 +65,40 @@ export function buildPositionedChordLine(line: string): PositionedChordLine | nu
     lyricText += before;
     lyricCursor += before.length;
     chords.push({
-      column: Math.max(lyricCursor, minimumChordColumn),
+      anchorColumn: lyricCursor,
       label: chordLabel,
       name: chordName,
     });
-    minimumChordColumn = Math.max(lyricCursor, minimumChordColumn) + chordLabel.length + 1;
     lastIndex = startIndex + chordLabel.length;
   }
 
   lyricText += line.slice(lastIndex);
+  const kind = lyricText.trim().length > 0 ? "lyrics" : "instrumental";
+  const positionedChords =
+    kind === "instrumental"
+      ? chords.reduce<PositionedChord[]>((result, chord) => {
+          const previous = result.at(-1);
+          const anchorColumn = previous
+            ? Math.max(
+                chord.anchorColumn,
+                previous.anchorColumn + previous.label.length + 1,
+              )
+            : chord.anchorColumn;
+
+          result.push({ ...chord, anchorColumn });
+          return result;
+        }, [])
+      : chords;
 
   const contentWidth = Math.max(
     lyricText.length,
-    ...chords.map((chord) => chord.column + chord.label.length),
+    ...positionedChords.map((chord) => chord.anchorColumn + chord.label.length),
   );
 
   return {
-    chords,
+    chords: positionedChords,
     contentWidth,
+    kind,
     lyricText,
   };
 }
@@ -126,6 +162,101 @@ function computeRowBoundaries(
   return boundaries;
 }
 
+function computeLyricRowBoundaries(
+  chords: PositionedChord[],
+  wordSpans: Span[],
+  lyricText: string,
+  maxColumns: number,
+): number[] {
+  const boundaries = [0];
+  let rowStart = 0;
+
+  while (rowStart < lyricText.length) {
+    let contentStart = rowStart;
+
+    if (rowStart > 0) {
+      while (contentStart < lyricText.length && /\s/.test(lyricText[contentStart])) {
+        contentStart += 1;
+      }
+    }
+
+    if (contentStart >= lyricText.length) {
+      boundaries.push(lyricText.length);
+      break;
+    }
+
+    const remainingWords = wordSpans.filter((span) => span.end > contentStart);
+    let rowEnd = remainingWords[0]?.end ?? lyricText.length;
+
+    for (const word of remainingWords) {
+      const textFits = word.end - contentStart <= maxColumns;
+      const chordLabelsFit = chords
+        .filter((chord) => {
+          const ownershipColumn = getChordOwnershipColumn(
+            lyricText,
+            chord.anchorColumn,
+          );
+
+          return ownershipColumn >= contentStart && ownershipColumn < word.end;
+        })
+        .every(
+          (chord) =>
+            Math.max(0, chord.anchorColumn - contentStart) +
+              chord.label.length <=
+            maxColumns,
+        );
+
+      if ((!textFits || !chordLabelsFit) && rowEnd > contentStart) {
+        break;
+      }
+
+      rowEnd = word.end;
+    }
+
+    boundaries.push(rowEnd);
+    rowStart = rowEnd;
+  }
+
+  return boundaries;
+}
+
+function getChordOwnershipColumn(lyricText: string, anchorColumn: number) {
+  let column = Math.min(anchorColumn, lyricText.length);
+
+  while (column < lyricText.length && /\s/.test(lyricText[column])) {
+    column += 1;
+  }
+
+  return column;
+}
+
+export function layoutChordLanes(chords: PositionedChord[]): {
+  chords: LaidOutChord[];
+  laneCount: number;
+} {
+  const laneEnds: number[] = [];
+  const laidOutChords = chords.map((chord) => {
+    let lane = laneEnds.findIndex((end) => chord.anchorColumn >= end + 1);
+
+    if (lane === -1) {
+      lane = laneEnds.length;
+    }
+
+    laneEnds[lane] = chord.anchorColumn + chord.label.length;
+
+    return {
+      ...chord,
+      column: chord.anchorColumn,
+      lane,
+    };
+  });
+
+  return {
+    chords: laidOutChords,
+    laneCount: Math.max(1, laneEnds.length),
+  };
+}
+
 /**
  * Splits a positioned chord line into visual rows so its content never
  * exceeds `maxColumns` characters wide. Wraps at whitespace between words
@@ -139,10 +270,11 @@ export function wrapPositionedChordLine(
   positioned: PositionedChordLine,
   maxColumns: number,
 ): ChordLineRow[] {
-  const { chords, contentWidth, lyricText } = positioned;
+  const { chords, contentWidth, kind, lyricText } = positioned;
 
   if (maxColumns <= 0 || contentWidth <= maxColumns) {
-    return [{ chords, lyricText }];
+    const laidOut = layoutChordLanes(chords);
+    return [{ ...laidOut, lyricText }];
   }
 
   const wordSpans: Span[] = Array.from(lyricText.matchAll(/\S+/g)).map((match) => {
@@ -150,16 +282,38 @@ export function wrapPositionedChordLine(
 
     return { end: start + match[0].length, start };
   });
-  const chordSpans: Span[] = chords.map((chord) => ({
-    end: chord.column + chord.label.length,
-    start: chord.column,
-  }));
-  const merged = mergeSpans([...wordSpans, ...chordSpans]);
-  const candidates = Array.from(
-    new Set([0, contentWidth, ...merged.flatMap((span) => [span.start, span.end])]),
-  ).sort((a, b) => a - b);
+  const boundaries =
+    kind === "lyrics"
+      ? (() => {
+          const lyricBoundaries = computeLyricRowBoundaries(
+            chords,
+            wordSpans,
+            lyricText,
+            maxColumns,
+          );
 
-  const boundaries = computeRowBoundaries(candidates, contentWidth, maxColumns);
+          if (contentWidth > lyricText.length) {
+            lyricBoundaries.push(contentWidth);
+          }
+
+          return lyricBoundaries;
+        })()
+      : (() => {
+          const chordSpans: Span[] = chords.map((chord) => ({
+            end: chord.anchorColumn + chord.label.length,
+            start: chord.anchorColumn,
+          }));
+          const merged = mergeSpans(chordSpans);
+          const candidates = Array.from(
+            new Set([
+              0,
+              contentWidth,
+              ...merged.flatMap((span) => [span.start, span.end]),
+            ]),
+          ).sort((a, b) => a - b);
+
+          return computeRowBoundaries(candidates, contentWidth, maxColumns);
+        })();
 
   return boundaries.slice(0, -1).map((start, index) => {
     const end = boundaries[index + 1];
@@ -177,14 +331,27 @@ export function wrapPositionedChordLine(
       }
     }
 
+    const isLastRow = index === boundaries.length - 2;
     const rowChords = chords
-      .filter((chord) => chord.column >= start && chord.column < end)
+      .filter((chord) => {
+        const ownershipColumn =
+          kind === "lyrics"
+            ? getChordOwnershipColumn(lyricText, chord.anchorColumn)
+            : chord.anchorColumn;
+
+        return (
+          ownershipColumn >= start &&
+          (ownershipColumn < end ||
+            (isLastRow && ownershipColumn === end))
+        );
+      })
       .map((chord) => ({
         ...chord,
-        column: chord.column - start - trimOffset,
+        anchorColumn: Math.max(0, chord.anchorColumn - start - trimOffset),
       }));
+    const laidOut = layoutChordLanes(rowChords);
 
-    return { chords: rowChords, lyricText: rowLyricText };
+    return { ...laidOut, lyricText: rowLyricText };
   });
 }
 

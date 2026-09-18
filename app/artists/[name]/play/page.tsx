@@ -20,9 +20,10 @@ export async function generateMetadata({
   params,
 }: ArtistPlaylistPageProps): Promise<Metadata> {
   const { name } = await params;
+  const artistName = decodeURIComponent(name);
 
   return {
-    title: `${name} · Playlist · Guitar Chords Library`,
+    title: `${artistName} · Playlist · Guitar Chords Library`,
   };
 }
 
@@ -30,9 +31,10 @@ export default async function ArtistPlaylistPage({
   params,
 }: ArtistPlaylistPageProps) {
   const { name } = await params;
+  const artistName = decodeURIComponent(name);
 
   const [songs, chordDefinitions] = await Promise.all([
-    getSongsByArtist(name),
+    getSongsByArtist(artistName),
     getChordDefinitions(),
   ]);
 
@@ -42,7 +44,7 @@ export default async function ArtistPlaylistPage({
 
   return (
     <PlaylistPlayer
-      artistName={name}
+      artistName={artistName}
       chordDefinitions={chordDefinitions}
       songs={songs}
     />

@@ -5,6 +5,7 @@ import {
   serializeChordFrets,
 } from "../lib/chord-library";
 import { prisma } from "../lib/prisma";
+import type { AnchoredChordLine, ChordSection } from "../lib/types";
 
 function toSongStatus(status: "draft" | "published") {
   return status === "published" ? "PUBLISHED" : "DRAFT";
@@ -22,14 +23,26 @@ function toImportStatus(status: "draft" | "published") {
   return status === "published" ? "COMPLETED" : "READY_FOR_REVIEW";
 }
 
-function buildExtractedText(
-  sections: {
-    title: string;
-    lines: string[];
-  }[],
-) {
+function serializeAnchoredLine(line: AnchoredChordLine) {
+  return [...line.chords]
+    .sort((a, b) => b.anchorColumn - a.anchorColumn)
+    .reduce(
+      (text, chord) =>
+        `${text.slice(0, chord.anchorColumn)}${chord.label}${text.slice(chord.anchorColumn)}`,
+      line.lyricText,
+    );
+}
+
+function buildExtractedText(sections: ChordSection[]) {
   return sections
-    .map((section) => [section.title, ...section.lines].join("\n"))
+    .map((section) =>
+      [
+        section.title,
+        ...section.lines.map((line) =>
+          typeof line === "string" ? line : serializeAnchoredLine(line),
+        ),
+      ].join("\n"),
+    )
     .join("\n\n");
 }
 

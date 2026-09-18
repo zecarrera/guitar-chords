@@ -3,8 +3,19 @@ import { describe, expect, it } from "vitest";
 import {
   buildPositionedChordLine,
   computeMaxColumns,
+  layoutChordLanes,
   wrapPositionedChordLine,
 } from "@/lib/chord-line-layout";
+
+describe("buildPositionedChordLine", () => {
+  it("preserves exact lyric anchors for dense inline chord changes", () => {
+    const positioned = buildPositionedChordLine("[Am]I [G]am [F]here")!;
+
+    expect(positioned.kind).toBe("lyrics");
+    expect(positioned.lyricText).toBe("I am here");
+    expect(positioned.chords.map((chord) => chord.anchorColumn)).toEqual([0, 2, 5]);
+  });
+});
 
 describe("computeMaxColumns", () => {
   it("derives the number of characters that fit a container at a given character width", () => {
@@ -34,7 +45,15 @@ describe("wrapPositionedChordLine", () => {
     const rows = wrapPositionedChordLine(positioned, 100);
 
     expect(rows).toEqual([
-      { chords: positioned.chords, lyricText: positioned.lyricText },
+      {
+        chords: positioned.chords.map((chord) => ({
+          ...chord,
+          column: chord.anchorColumn,
+          lane: 0,
+        })),
+        laneCount: 1,
+        lyricText: positioned.lyricText,
+      },
     ]);
   });
 
@@ -65,16 +84,18 @@ describe("wrapPositionedChordLine", () => {
     expect(rows).toEqual([
       {
         chords: [
-          { column: 0, label: "[Am]", name: "Am" },
-          { column: 5, label: "[C]", name: "C" },
+          { anchorColumn: 0, column: 0, label: "[Am]", lane: 0, name: "Am" },
+          { anchorColumn: 5, column: 5, label: "[C]", lane: 0, name: "C" },
         ],
+        laneCount: 1,
         lyricText: "",
       },
       {
         chords: [
-          { column: 0, label: "[G]", name: "G" },
-          { column: 4, label: "[F]", name: "F" },
+          { anchorColumn: 0, column: 0, label: "[G]", lane: 0, name: "G" },
+          { anchorColumn: 4, column: 4, label: "[F]", lane: 0, name: "F" },
         ],
+        laneCount: 1,
         lyricText: "",
       },
     ]);
@@ -124,7 +145,101 @@ describe("wrapPositionedChordLine", () => {
     // on the same row.
     const wordIndex = rowWithD.lyricText.indexOf("the");
     expect(wordIndex).toBeGreaterThanOrEqual(0);
-    expect(dChord.column).toBeLessThanOrEqual(wordIndex);
+    expect(dChord.column).toBe(wordIndex - 1);
+  });
+
+  it("assigns a dense chord to the row containing its anchored word", () => {
+    const positioned = buildPositionedChordLine("[Am]I [G]am [F]here")!;
+    const rows = wrapPositionedChordLine(positioned, 4);
+
+    expect(rows.map((row) => row.lyricText.trim())).toEqual(["I", "am", "here"]);
+    expect(rows.map((row) => row.chords.map((chord) => chord.name))).toEqual([
+      ["Am"],
+      ["G"],
+      ["F"],
+    ]);
+  });
+
+  it("moves a word with its chord when the label would cross the right edge", () => {
+    const positioned = buildPositionedChordLine(
+      "Keep singing until [Asus4]tonight",
+    )!;
+    const rows = wrapPositionedChordLine(positioned, 20);
+
+    expect(rows.map((row) => row.lyricText.trim())).toEqual([
+      "Keep singing until",
+      "tonight",
+    ]);
+    expect(rows[1].chords).toEqual([
+      expect.objectContaining({
+        anchorColumn: 0,
+        column: 0,
+        label: "[Asus4]",
+      }),
+    ]);
+  });
+
+  it("preserves chord ownership as available columns change", () => {
+    const positioned = buildPositionedChordLine(
+      "[G]Harbor lights are drifting [D]slowly tonight",
+    )!;
+
+    for (const maxColumns of [12, 20, 40]) {
+      const rows = wrapPositionedChordLine(positioned, maxColumns);
+      const rowWithD = rows.find((row) =>
+        row.chords.some((chord) => chord.name === "D"),
+      )!;
+
+      expect(rowWithD.lyricText).toContain("slowly");
+      expect(rowWithD.chords.find((chord) => chord.name === "D")?.column).toBe(
+        rowWithD.lyricText.indexOf("slowly"),
+      );
+    }
+  });
+
+  it("preserves a trailing chord when a lyric line wraps", () => {
+    const positioned = buildPositionedChordLine(
+      "[C]Harbor lights are drifting slowly tonight[G]",
+    )!;
+    const rows = wrapPositionedChordLine(positioned, 20);
+
+    expect(rows.flatMap((row) => row.chords.map((chord) => chord.name))).toEqual([
+      "C",
+      "G",
+    ]);
+    expect(rows.at(-1)?.chords[0]).toEqual(
+      expect.objectContaining({
+        anchorColumn: 0,
+        column: 0,
+        label: "[G]",
+      }),
+    );
+  });
+
+  it("includes full label width for an anchored two-line chord", () => {
+    const positioned = buildPositionedChordLine({
+      chords: [
+        {
+          anchorColumn: 24,
+          label: "[Asus4/G#]",
+          name: "Asus4/G#",
+        },
+      ],
+      kind: "anchored",
+      lyricText: "Keep singing softly tonight",
+    })!;
+
+    expect(positioned.contentWidth).toBe(34);
+    const rows = wrapPositionedChordLine(positioned, 30);
+
+    expect(rows.length).toBeGreaterThan(1);
+    expect(
+      rows.every((row) =>
+        row.chords.every(
+          (chord) => chord.column + chord.label.length <= 30,
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("does not infinite-loop when a single chord token is wider than maxColumns", () => {
@@ -133,5 +248,29 @@ describe("wrapPositionedChordLine", () => {
 
     expect(rows.length).toBeGreaterThan(0);
     expect(rows[0].chords[0].label).toBe("[Asus4/G#]");
+  });
+});
+
+describe("layoutChordLanes", () => {
+  it("stacks overlapping labels without changing their anchor columns", () => {
+    const layout = layoutChordLanes([
+      { anchorColumn: 0, label: "[Asus4]", name: "Asus4" },
+      { anchorColumn: 2, label: "[G]", name: "G" },
+      { anchorColumn: 4, label: "[Fmaj7]", name: "Fmaj7" },
+    ]);
+
+    expect(layout.laneCount).toBe(3);
+    expect(layout.chords.map((chord) => chord.column)).toEqual([0, 2, 4]);
+    expect(layout.chords.map((chord) => chord.lane)).toEqual([0, 1, 2]);
+  });
+
+  it("reuses a lane when labels have enough horizontal separation", () => {
+    const layout = layoutChordLanes([
+      { anchorColumn: 0, label: "[C]", name: "C" },
+      { anchorColumn: 4, label: "[G]", name: "G" },
+    ]);
+
+    expect(layout.laneCount).toBe(1);
+    expect(layout.chords.map((chord) => chord.lane)).toEqual([0, 0]);
   });
 });
