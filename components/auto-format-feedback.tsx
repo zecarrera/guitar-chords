@@ -1,10 +1,16 @@
 import type { AutoFormatResult } from "@/lib/auto-format";
 
 type AutoFormatFeedbackProps = {
+  applicationError?: string | null;
+  onApplySafeFixes?: () => void;
   result: AutoFormatResult;
 };
 
-export function AutoFormatFeedback({ result }: AutoFormatFeedbackProps) {
+export function AutoFormatFeedback({
+  applicationError,
+  onApplySafeFixes,
+  result,
+}: AutoFormatFeedbackProps) {
   const warnings = result.diagnostics.filter(
     (diagnostic) => diagnostic.severity === "warning",
   );
@@ -33,6 +39,38 @@ export function AutoFormatFeedback({ result }: AutoFormatFeedbackProps) {
         {result.instrumentalRows.length} instrumental,{" "}
         {result.inlineLines.length} inline.
       </p>
+
+      {result.safeFixes.length > 0 ? (
+        <div className="mt-2 border-t border-white/10 pt-2">
+          <p className="font-semibold text-white">
+            {result.safeFixes.reduce((sum, fix) => sum + fix.count, 0)} safe{" "}
+            {result.safeFixes.reduce((sum, fix) => sum + fix.count, 0) === 1
+              ? "fix"
+              : "fixes"}{" "}
+            available
+          </p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-slate-300">
+            {result.safeFixes.map((fix) => (
+              <li key={fix.code}>
+                {fix.description} ({fix.count})
+              </li>
+            ))}
+          </ul>
+          {onApplySafeFixes ? (
+            <button
+              type="button"
+              onClick={onApplySafeFixes}
+              className="mt-2 rounded-full bg-emerald-400 px-3 py-1 font-semibold text-slate-950 transition hover:bg-emerald-300"
+            >
+              Apply safe fixes
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {applicationError ? (
+        <p className="mt-2 font-semibold text-rose-200">{applicationError}</p>
+      ) : null}
 
       {warnings.length > 0 ? (
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
