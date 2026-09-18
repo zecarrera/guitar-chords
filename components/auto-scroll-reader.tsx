@@ -15,7 +15,12 @@ import {
   computeMaxColumns,
   wrapPositionedChordLine,
 } from "@/lib/chord-line-layout";
-import type { ChordDefinition, ChordSection, VideoLink } from "@/lib/types";
+import type {
+  AnchoredChordLine,
+  ChordDefinition,
+  ChordSection,
+  VideoLink,
+} from "@/lib/types";
 
 type AutoScrollReaderProps = {
   autoPlay?: boolean;
@@ -257,7 +262,7 @@ function ChordDiagram({ chordName, chordLookup }: ChordDiagramProps) {
 }
 
 type ChordLineProps = {
-  line: string;
+  line: string | AnchoredChordLine;
   maxColumns: number | null;
   onHideChordTooltip: () => void;
   onShowChordTooltip: (chordName: string, target: HTMLElement) => void;
@@ -274,16 +279,17 @@ function ChordLine({
   const positionedChordLine = buildPositionedChordLine(line);
 
   if (!positionedChordLine) {
-    return <div className="whitespace-pre-wrap">{line}</div>;
+    return (
+      <div className="whitespace-pre-wrap">
+        {typeof line === "string" ? line : line.lyricText}
+      </div>
+    );
   }
 
-  // Wrap onto multiple visual rows so the line never overflows the
-  // available width; maxColumns is null only before the first measurement,
-  // in which case we render the line unwrapped for one frame.
-  const rows =
-    maxColumns === null
-      ? [{ chords: positionedChordLine.chords, lyricText: positionedChordLine.lyricText }]
-      : wrapPositionedChordLine(positionedChordLine, maxColumns);
+  const rows = wrapPositionedChordLine(
+    positionedChordLine,
+    maxColumns ?? positionedChordLine.contentWidth,
+  );
 
   return (
     <div className="space-y-0">
@@ -300,7 +306,7 @@ function ChordLine({
                 className="relative whitespace-pre text-cyan-400 leading-[1.5]"
                 style={{
                   width: `${Math.max(rowWidth, 1)}ch`,
-                  height: "1.5em",
+                  height: `${row.laneCount * 1.5}em`,
                 }}
               >
                 {row.chords.map((chord, index) => (
@@ -308,7 +314,10 @@ function ChordLine({
                     key={`${chord.name}-${chord.column}-${index}`}
                     tabIndex={0}
                     className="absolute cursor-help underline decoration-dotted underline-offset-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-                    style={{ left: `${chord.column}ch` }}
+                    style={{
+                      left: `${chord.column}ch`,
+                      top: `${(row.laneCount - chord.lane - 1) * 1.5}em`,
+                    }}
                     onBlur={onHideChordTooltip}
                     onMouseEnter={(event) =>
                       onShowChordTooltip(chord.name, event.currentTarget)
@@ -408,6 +417,7 @@ export function AutoScrollReader({
   const containerRef = useRef<HTMLDivElement>(null);
   const chordContentRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
+  const observedContentWidthRef = useRef<number | null>(null);
   const scrollPositionRef = useRef(0);
   const videoPlayerRef = useRef<HTMLDivElement>(null);
   const savedSpeed = useSyncExternalStore(
@@ -423,11 +433,13 @@ export function AutoScrollReader({
   const [manualSpeed, setManualSpeed] = useState<number | null>(null);
   const [manualFontScale, setManualFontScale] = useState<number | null>(null);
   const [isPlayModeActive, setIsPlayModeActive] = useState(false);
-  const [playbackPhase, setPlaybackPhase] = useState<"idle" | "countingDown" | "scrolling">(
-    "idle",
-  );
+  const [playbackPhase, setPlaybackPhase] = useState<
+    "idle" | "preparing" | "countingDown" | "scrolling"
+  >("idle");
   const [countdownValue, setCountdownValue] = useState(0);
   const [maxColumns, setMaxColumns] = useState<number | null>(null);
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
+  const [layoutRevision, setLayoutRevision] = useState(0);
   const [showChords, setShowChords] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState<{
@@ -467,8 +479,10 @@ export function AutoScrollReader({
   // wrap-computed at this point since wrapping applies unconditionally.
   function startPlayback() {
     setIsPlayModeActive(true);
+    setIsLayoutReady(false);
+    setLayoutRevision((revision) => revision + 1);
     setCountdownValue(3);
-    setPlaybackPhase("countingDown");
+    setPlaybackPhase("preparing");
   }
 
   function stopPlayback() {
@@ -481,7 +495,7 @@ export function AutoScrollReader({
     } else if (playbackPhase === "scrolling") {
       stopPlayback();
     }
-    // countingDown: no-op — the countdown always runs to completion once started.
+    // preparing/countingDown: no-op — playback preparation runs to completion.
   }
 
   function updateSpeed(nextSpeed: number) {
@@ -508,6 +522,12 @@ export function AutoScrollReader({
   }, []);
 
   // Ticks the get-ready countdown down to zero, then hands off to scrolling.
+  useEffect(() => {
+    if (playbackPhase === "preparing" && isLayoutReady) {
+      setPlaybackPhase("countingDown");
+    }
+  }, [isLayoutReady, playbackPhase]);
+
   useEffect(() => {
     if (playbackPhase !== "countingDown") {
       return;
@@ -577,10 +597,8 @@ export function AutoScrollReader({
     };
   }, []);
 
-  // Measure the monospace character width via a hidden 1ch-wide probe and
-  // derive maxColumns so lines can be wrapped to fit, without ever relying
-  // on horizontal scroll. Applies unconditionally (browse and play mode
-  // alike), and recomputes whenever the container width or font scale changes.
+  // Measure the monospace character width and observe the actual content box
+  // so wrapping follows surrounding layout changes as well as viewport changes.
   useEffect(() => {
     const container = chordContentRef.current;
     const measure = measureRef.current;
@@ -589,18 +607,60 @@ export function AutoScrollReader({
       return;
     }
 
-    // Run after paint so the DOM reflects the current font-size.
-    const frameId = requestAnimationFrame(() => {
-      const characterWidthPx = measure.getBoundingClientRect().width;
-      const containerWidthPx = container.clientWidth;
+    let frameId = 0;
+    let disposed = false;
 
-      if (characterWidthPx > 0) {
-        setMaxColumns(computeMaxColumns(containerWidthPx, characterWidthPx));
+    const updateLayout = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        if (disposed) {
+          return;
+        }
+
+        const characterWidthPx = measure.getBoundingClientRect().width;
+        const containerWidthPx = container.clientWidth;
+
+        if (characterWidthPx > 0) {
+          const nextMaxColumns = computeMaxColumns(
+            containerWidthPx,
+            characterWidthPx,
+          );
+          setMaxColumns((current) =>
+            current === nextMaxColumns ? current : nextMaxColumns,
+          );
+          setIsLayoutReady(true);
+        }
+      });
+    };
+
+    setIsLayoutReady(false);
+    updateLayout();
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const nextWidth = entries[0]?.contentRect.width ?? container.clientWidth;
+
+      if (observedContentWidthRef.current === nextWidth) {
+        return;
+      }
+
+      observedContentWidthRef.current = nextWidth;
+      setIsLayoutReady(false);
+      updateLayout();
+    });
+    resizeObserver.observe(container);
+
+    document.fonts?.ready.then(() => {
+      if (!disposed) {
+        updateLayout();
       }
     });
 
-    return () => cancelAnimationFrame(frameId);
-  }, [viewportSize, fontScale]);
+    return () => {
+      disposed = true;
+      resizeObserver.disconnect();
+      cancelAnimationFrame(frameId);
+    };
+  }, [fontScale, isPlayModeActive, layoutRevision]);
 
   useEffect(() => {
     if (!controlsPageChrome) {
@@ -787,7 +847,7 @@ export function AutoScrollReader({
           </div>
         </div>
 
-        {playbackPhase === "countingDown" ? (
+        {playbackPhase === "preparing" || playbackPhase === "countingDown" ? (
           <div
             role="status"
             aria-live="assertive"
@@ -796,7 +856,11 @@ export function AutoScrollReader({
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-300">
               Get ready
             </p>
-            <p className="text-7xl font-bold text-white">{countdownValue}</p>
+            {playbackPhase === "countingDown" ? (
+              <p className="text-7xl font-bold text-white">{countdownValue}</p>
+            ) : (
+              <p className="text-lg font-semibold text-white">Preparing layout...</p>
+            )}
           </div>
         ) : null}
 

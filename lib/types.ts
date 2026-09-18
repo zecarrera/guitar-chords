@@ -2,9 +2,21 @@ export type SourceType = "pdf" | "external_link";
 export type VideoType = "tutorial" | "song";
 export type ChordFret = number | "x";
 
+export type ChordAnnotation = {
+  anchorColumn: number;
+  label: string;
+  name: string;
+};
+
+export type AnchoredChordLine = {
+  chords: ChordAnnotation[];
+  kind: "anchored";
+  lyricText: string;
+};
+
 export type ChordSection = {
   title: string;
-  lines: string[];
+  lines: Array<string | AnchoredChordLine>;
 };
 
 export type ChordDefinition = {
