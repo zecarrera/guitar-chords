@@ -40,7 +40,7 @@ export function buildPositionedChordLine(
           (chord) => chord.anchorColumn + chord.label.length,
         ),
       ),
-      kind: "lyrics",
+      kind: line.lyricText.trim().length > 0 ? "lyrics" : "instrumental",
       lyricText: line.lyricText,
     };
   }

@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { extractChordTextFromPdf, normalizeChordDocumentText } from "@/lib/pdf-import";
+import {
+  normalizeOptionalChordDocumentText,
+  resolveUpdatedChordDocumentText,
+} from "@/lib/chord-document-text";
+import { extractChordTextFromPdf } from "@/lib/pdf-import";
 import { prisma } from "@/lib/prisma";
 
 function readRequiredString(formData: FormData, key: string) {
@@ -260,7 +264,7 @@ export async function createSongAction(formData: FormData) {
       ? readRequiredString(formData, "sourceUrl")
       : null;
   const extractedText =
-    (manualExtractedText ? normalizeChordDocumentText(manualExtractedText) : null) ??
+    normalizeOptionalChordDocumentText(manualExtractedText) ??
     (normalizedSourceType === "PDF" && pdfUpload
       ? await extractChordTextFromPdf(pdfUpload.fileData)
       : null);
@@ -343,12 +347,11 @@ export async function updateSongAction(formData: FormData) {
     normalizedSourceType === "PDF" && pdfUpload
       ? await extractChordTextFromPdf(pdfUpload.fileData)
       : null;
-  const extractedText =
-    extractedFromPdf &&
-    (!submittedExtractedText ||
-      submittedExtractedText === existingDocument?.extractedText)
-      ? extractedFromPdf
-      : submittedExtractedText;
+  const extractedText = resolveUpdatedChordDocumentText({
+    existingText: existingDocument?.extractedText ?? null,
+    extractedFromPdf,
+    submittedText: submittedExtractedText,
+  });
   const documentData = {
     title: documentTitle,
     sourceType: normalizedSourceType,
@@ -533,9 +536,7 @@ export async function createSongFromModalAction(formData: FormData) {
 
   const resolvedText = usePdf && pdfUpload
     ? await extractChordTextFromPdf(pdfUpload.fileData)
-    : extractedText
-      ? normalizeChordDocumentText(extractedText)
-      : null;
+    : normalizeOptionalChordDocumentText(extractedText);
 
   const slug = slugify(title);
 
@@ -619,12 +620,11 @@ export async function updateSongFromModalAction(formData: FormData) {
     normalizedSourceType === "PDF" && pdfUpload
       ? await extractChordTextFromPdf(pdfUpload.fileData)
       : null;
-  const extractedText =
-    extractedFromPdf &&
-    (!submittedExtractedText ||
-      submittedExtractedText === existingDocument?.extractedText)
-      ? extractedFromPdf
-      : submittedExtractedText;
+  const extractedText = resolveUpdatedChordDocumentText({
+    existingText: existingDocument?.extractedText ?? null,
+    extractedFromPdf,
+    submittedText: submittedExtractedText,
+  });
 
   const documentData = {
     title: documentTitle,

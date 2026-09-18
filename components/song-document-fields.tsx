@@ -2,7 +2,11 @@
 
 import { useRef, useState } from "react";
 
-import { autoFormatChordSheet } from "@/lib/auto-format";
+import { AutoFormatFeedback } from "@/components/auto-format-feedback";
+import {
+  autoFormatChordSheet,
+  type AutoFormatResult,
+} from "@/lib/auto-format";
 
 type SourceType = "PDF" | "EXTERNAL_LINK";
 
@@ -46,16 +50,15 @@ export function SongDocumentFields({
   const [sourceType, setSourceType] = useState<SourceType>(defaultSourceType);
   const isExternalLink = sourceType === "EXTERNAL_LINK";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [formatDone, setFormatDone] = useState(false);
+  const [formatResult, setFormatResult] = useState<AutoFormatResult | null>(null);
 
   function handleAutoFormat() {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    const formatted = autoFormatChordSheet(textarea.value);
-    textarea.value = formatted;
+    const result = autoFormatChordSheet(textarea.value);
+    textarea.value = result.formattedText;
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
-    setFormatDone(true);
-    setTimeout(() => setFormatDone(false), 2000);
+    setFormatResult(result);
   }
 
   return (
@@ -149,14 +152,9 @@ export function SongDocumentFields({
           <button
             type="button"
             onClick={handleAutoFormat}
-            disabled={formatDone}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-300 ${
-              formatDone
-                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                : "border-amber-300/30 text-amber-300 hover:border-amber-300/60 hover:bg-amber-300/10"
-            }`}
+            className="rounded-full border border-amber-300/30 px-3 py-1 text-xs font-semibold text-amber-300 transition-colors duration-300 hover:border-amber-300/60 hover:bg-amber-300/10"
           >
-            {formatDone ? "✓ Formatted!" : "Auto-format"}
+            Analyze format
           </button>
         </span>
         <textarea
@@ -164,13 +162,15 @@ export function SongDocumentFields({
           name="extractedText"
           rows={extractedTextRows}
           defaultValue={extractedTextDefaultValue}
+          onChange={() => setFormatResult(null)}
           className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 font-mono text-sm text-white"
-          placeholder="Verse&#10;[G] line one&#10;[D] line two"
+          placeholder={"Verse\nG         D\nLine one and line two"}
         />
+        {formatResult ? <AutoFormatFeedback result={formatResult} /> : null}
         <p className="text-xs leading-5 text-slate-400">
           {isExternalLink
-            ? "Optional: paste the text you want in the player, or add it later after saving the link."
-            : "Leave the existing text untouched when replacing a PDF and the new file will refresh this chord sheet automatically."}
+            ? "Optional: paste inline [Chord]lyrics or aligned bare/bracketed chord rows, or add them later."
+            : "Aligned bare or bracketed chord rows are supported. Leave existing text untouched when replacing a PDF to refresh it automatically."}
         </p>
       </label>
 

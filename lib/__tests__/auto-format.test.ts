@@ -3,188 +3,99 @@ import { describe, expect, it } from "vitest";
 import { autoFormatChordSheet } from "@/lib/auto-format";
 
 describe("autoFormatChordSheet", () => {
-  // ── Chord-line detection & wrapping ──────────────────────────────────────
+  it("preserves bare paired notation and exact source columns", () => {
+    const input = "Verse\nAm         G      D\nSome lyrics here";
+    const result = autoFormatChordSheet(input);
 
-  describe("chord-line wrapping", () => {
-    it("wraps a single-chord line", () => {
-      expect(autoFormatChordSheet("Am")).toBe("[Am]");
-    });
-
-    it("wraps multiple chords on one line", () => {
-      expect(autoFormatChordSheet("Am G D Em")).toBe("[Am] [G] [D] [Em]");
-    });
-
-    it("preserves internal spacing so chords stay aligned with lyrics", () => {
-      expect(autoFormatChordSheet("Am         G      D        Em")).toBe(
-        "[Am]         [G]      [D]        [Em]",
-      );
-    });
-
-    it("preserves leading whitespace on indented chord lines", () => {
-      expect(autoFormatChordSheet("  Am  G")).toBe("  [Am]  [G]");
-    });
-
-    it("strips trailing whitespace from chord lines", () => {
-      expect(autoFormatChordSheet("Am   ")).toBe("[Am]");
-    });
-
-    it("handles sharp and flat chords", () => {
-      expect(autoFormatChordSheet("C# Bb F#m Ebm")).toBe("[C#] [Bb] [F#m] [Ebm]");
-    });
-
-    it("handles extended chords", () => {
-      expect(autoFormatChordSheet("Am7 G7 Cmaj7 Bm7")).toBe("[Am7] [G7] [Cmaj7] [Bm7]");
-    });
-
-    it("handles sus and add chords", () => {
-      expect(autoFormatChordSheet("Asus4 Dsus2 Cadd9")).toBe("[Asus4] [Dsus2] [Cadd9]");
-    });
-
-    it("handles slash chords", () => {
-      expect(autoFormatChordSheet("D/F# G/B Am/E")).toBe("[D/F#] [G/B] [Am/E]");
-    });
+    expect(result.formattedText).toBe(input);
+    expect(result.recognizedPairs).toEqual([
+      {
+        chords: [
+          { name: "Am", start: 0 },
+          { name: "G", start: 11 },
+          { name: "D", start: 18 },
+        ],
+        line: 2,
+        lyricLine: 3,
+        notation: "bare",
+      },
+    ]);
   });
 
-  // ── Idempotency ───────────────────────────────────────────────────────────
+  it("recognizes bracketed pairs and inline notation without rewriting them", () => {
+    const input = "Verse\n[Am]    [G]\nSing it\n[G]Hello [D]world";
+    const result = autoFormatChordSheet(input);
 
-  describe("idempotency", () => {
-    it("does not double-wrap already-bracketed chords", () => {
-      const input = "[Am] [G] [D] [Em]";
-      expect(autoFormatChordSheet(input)).toBe(input);
-    });
-
-    it("leaves a line that mixes brackets and lyrics untouched", () => {
-      const input = "[G] Harbor lights are [D] drifting slow";
-      expect(autoFormatChordSheet(input)).toBe(input);
-    });
+    expect(result.formattedText).toBe(input);
+    expect(result.recognizedPairs).toEqual([
+      expect.objectContaining({ line: 2, lyricLine: 3, notation: "bracketed" }),
+    ]);
+    expect(result.inlineLines).toEqual([4]);
   });
 
-  // ── Lyric lines ───────────────────────────────────────────────────────────
+  it("reports standalone chord rows as instrumental", () => {
+    const result = autoFormatChordSheet("Intro\nAm G\nC F");
 
-  describe("lyric lines", () => {
-    it("does not modify regular lyric lines", () => {
-      const input = "Vai e vem o tempo mas nada muda";
-      expect(autoFormatChordSheet(input)).toBe(input);
-    });
-
-    it("does not modify lines that start with a chord word followed by lyrics", () => {
-      // "Am" here is part of "Am I dreaming?" — not a chord line
-      const input = "Am I dreaming of you tonight";
-      expect(autoFormatChordSheet(input)).toBe(input);
-    });
+    expect(result.instrumentalRows.map((row) => row.line)).toEqual([2, 3]);
+    expect(result.recognizedPairs).toEqual([]);
   });
 
-  // ── Blank-line cleanup ────────────────────────────────────────────────────
+  it("reports unknown diagrams without rejecting valid syntax", () => {
+    const result = autoFormatChordSheet("Verse\nG13 Cmaj9\nJazz words");
 
-  describe("blank-line cleanup", () => {
-    it("collapses multiple blank lines between sections into one", () => {
-      const input = "Verse\n\n\n\nChorus";
-      expect(autoFormatChordSheet(input)).toBe("Verse\n\nChorus");
-    });
-
-    it("removes blank lines within a section block", () => {
-      const input = "Verse\nLine one\n\nLine two";
-      // The two sub-blocks become separate sections
-      expect(autoFormatChordSheet(input)).toBe("Verse\nLine one\n\nLine two");
-    });
-
-    it("removes leading and trailing blank lines", () => {
-      const input = "\n\nVerse\n\n";
-      expect(autoFormatChordSheet(input)).toBe("Verse");
-    });
-
-    it("treats whitespace-only lines as section separators", () => {
-      // A line containing only spaces is indistinguishable from a blank line
-      // and becomes a section boundary, not a stripped intra-section line.
-      const input = "Verse\nLine one\n   \nLine two";
-      expect(autoFormatChordSheet(input)).toBe("Verse\nLine one\n\nLine two");
-    });
+    expect(result.recognizedPairs[0].chords.map((chord) => chord.name)).toEqual([
+      "G13",
+      "Cmaj9",
+    ]);
+    expect(result.missingDiagrams).toEqual([
+      { line: 2, name: "G13" },
+      { line: 2, name: "Cmaj9" },
+    ]);
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "missing-chord-diagram",
+        severity: "info",
+      }),
+      expect.objectContaining({
+        code: "missing-chord-diagram",
+        severity: "info",
+      }),
+    ]);
   });
 
-  // ── Full document scenarios ───────────────────────────────────────────────
+  it.each([
+    ["Verse\nAm G x2\nSing it", "ambiguous-mixed-row"],
+    ["Intro\n| Am | G |", "bar-delimited-row"],
+    ["Verse\n[Am G\nSing it", "malformed-brackets"],
+    ["Verse\nAm\tG\nSing it", "tab-alignment"],
+  ])("preserves ambiguous input and reports %s", (input, code) => {
+    const result = autoFormatChordSheet(input);
 
-  describe("full chord-sheet documents", () => {
-    it("formats a typical section with header, chord line, and lyrics", () => {
-      const input = [
-        "Verse",
-        "Am G D Em",
-        "Some lyrics here",
-        "",
-        "Chorus",
-        "C G Am F",
-        "More lyrics here",
-      ].join("\n");
-
-      const expected = [
-        "Verse",
-        "[Am] [G] [D] [Em]",
-        "Some lyrics here",
-        "",
-        "Chorus",
-        "[C] [G] [Am] [F]",
-        "More lyrics here",
-      ].join("\n");
-
-      expect(autoFormatChordSheet(input)).toBe(expected);
-    });
-
-    it("handles extra blank lines between sections and whitespace-only separator lines", () => {
-      const input = [
-        "Intro",
-        "G D",
-        "",
-        "",
-        "Verse",
-        "Am   ",
-        "   ",      // whitespace-only line → treated as section separator
-        "Em G",
-        "Some lyrics",
-      ].join("\n");
-
-      // "Am   " and "Em G" end up in separate sections because the whitespace
-      // line between them acts as a section boundary (same as a blank line).
-      const expected = [
-        "Intro",
-        "[G] [D]",
-        "",
-        "Verse",
-        "[Am]",
-        "",
-        "[Em] [G]",
-        "Some lyrics",
-      ].join("\n");
-
-      expect(autoFormatChordSheet(input)).toBe(expected);
-    });
-
-    it("is idempotent on an already-formatted document", () => {
-      const formatted = [
-        "Verse",
-        "[Am] [G] [D] [Em]",
-        "Some lyrics here",
-        "",
-        "Chorus",
-        "[C] [G] [Am] [F]",
-        "More lyrics here",
-      ].join("\n");
-
-      expect(autoFormatChordSheet(formatted)).toBe(formatted);
-    });
+    expect(result.formattedText).toBe(input);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code, line: 2, severity: "warning" }),
+    );
   });
 
-  // ── Edge cases ────────────────────────────────────────────────────────────
+  it("preserves section boundaries while normalizing outer whitespace", () => {
+    const result = autoFormatChordSheet("\nVerse\nLine\n\n\nChorus\nLine\n");
 
-  describe("edge cases", () => {
-    it("returns empty string for empty input", () => {
-      expect(autoFormatChordSheet("")).toBe("");
-    });
+    expect(result.formattedText).toBe("Verse\nLine\n\nChorus\nLine");
+  });
 
-    it("returns empty string for whitespace-only input", () => {
-      expect(autoFormatChordSheet("   \n\n  \n")).toBe("");
-    });
+  it("is idempotent", () => {
+    const input = "Verse\nAm         G\nSome lyrics\n\nChorus\n[C]More";
+    const once = autoFormatChordSheet(input);
+    const twice = autoFormatChordSheet(once.formattedText);
 
-    it("handles a single lyric word that matches no chord", () => {
-      expect(autoFormatChordSheet("Hello")).toBe("Hello");
-    });
+    expect(twice).toEqual(once);
+  });
+
+  it("does not warn for ordinary lyrics beginning with a chord-like word", () => {
+    const result = autoFormatChordSheet("Am I dreaming of you tonight");
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.recognizedPairs).toEqual([]);
+    expect(result.instrumentalRows).toEqual([]);
   });
 });

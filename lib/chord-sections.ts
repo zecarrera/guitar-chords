@@ -1,26 +1,32 @@
 import type {
   AnchoredChordLine,
-  ChordAnnotation,
   ChordSection,
 } from "@/lib/types";
 
-const chordTokenPattern = /\[([^[\]]+)\]/g;
+import { classifyChordRow } from "@/lib/chord-syntax";
 
-function parseChordOnlyLine(line: string): ChordAnnotation[] | null {
-  const matches = Array.from(line.matchAll(chordTokenPattern));
+function buildAnchoredLine(
+  line: string,
+  lyricText: string,
+): AnchoredChordLine | null {
+  const classification = classifyChordRow(line);
 
-  if (
-    matches.length === 0 ||
-    line.replace(chordTokenPattern, "").trim().length > 0
-  ) {
+  if (classification.kind !== "chord-row") {
     return null;
   }
 
-  return matches.map((match) => ({
-    anchorColumn: match.index ?? 0,
-    label: match[0],
-    name: match[1]?.trim(),
-  }));
+  return {
+    chords: classification.tokens.map((token) => ({
+      anchorColumn:
+        lyricText.length > 0
+          ? Math.min(token.start, lyricText.length)
+          : token.start,
+      label: token.label,
+      name: token.name,
+    })),
+    kind: "anchored",
+    lyricText,
+  };
 }
 
 function buildLogicalLines(lines: string[]): ChordSection["lines"] {
@@ -28,29 +34,22 @@ function buildLogicalLines(lines: string[]): ChordSection["lines"] {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const chords = parseChordOnlyLine(line);
+    const lineClassification = classifyChordRow(line);
     const nextLine = lines[index + 1];
-    const nextLineChords =
-      nextLine === undefined ? null : parseChordOnlyLine(nextLine);
+    const nextLineClassification =
+      nextLine === undefined ? null : classifyChordRow(nextLine);
     const canPair =
-      chords !== null &&
+      lineClassification.kind === "chord-row" &&
       nextLine !== undefined &&
-      nextLineChords === null &&
+      nextLineClassification?.kind === "other" &&
       !nextLine.includes("[") &&
       nextLine.trim().length > 0;
 
     if (canPair) {
-      const anchoredLine: AnchoredChordLine = {
-        chords: chords.map((chord) => ({
-          ...chord,
-          anchorColumn: Math.min(chord.anchorColumn, nextLine.length),
-        })),
-        kind: "anchored",
-        lyricText: nextLine,
-      };
-
-      logicalLines.push(anchoredLine);
+      logicalLines.push(buildAnchoredLine(line, nextLine)!);
       index += 1;
+    } else if (lineClassification.kind === "chord-row") {
+      logicalLines.push(buildAnchoredLine(line, "")!);
     } else {
       logicalLines.push(line);
     }
@@ -90,8 +89,10 @@ export function parseChordSections(extractedText?: string | null): ChordSection[
   return blocks.map((block, index) => {
     const [firstLine, ...rest] = block;
     const trimmedFirstLine = firstLine.trim();
+    const firstLineClassification = classifyChordRow(firstLine);
     const useFirstLineAsTitle =
       rest.length > 0 &&
+      firstLineClassification.kind === "other" &&
       !trimmedFirstLine.includes("[") &&
       trimmedFirstLine.length <= 40;
 

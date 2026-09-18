@@ -10,7 +10,11 @@ import {
   updateArtistAction,
   updateSongFromModalAction,
 } from "@/app/manage/actions";
-import { autoFormatChordSheet } from "@/lib/auto-format";
+import { AutoFormatFeedback } from "@/components/auto-format-feedback";
+import {
+  autoFormatChordSheet,
+  type AutoFormatResult,
+} from "@/lib/auto-format";
 
 /* ─── Types ─────────────────────────────────────────── */
 
@@ -98,15 +102,15 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
 function ContentEditor({ defaultText }: { defaultText?: string | null }) {
   const [contentType, setContentType] = useState<"text" | "pdf">("text");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [formatDone, setFormatDone] = useState(false);
+  const [formatResult, setFormatResult] = useState<AutoFormatResult | null>(null);
 
   function handleAutoFormat() {
     const ta = textareaRef.current;
     if (!ta) return;
-    ta.value = autoFormatChordSheet(ta.value);
+    const result = autoFormatChordSheet(ta.value);
+    ta.value = result.formattedText;
     ta.dispatchEvent(new Event("input", { bubbles: true }));
-    setFormatDone(true);
-    setTimeout(() => setFormatDone(false), 2000);
+    setFormatResult(result);
   }
 
   return (
@@ -136,17 +140,25 @@ function ContentEditor({ defaultText }: { defaultText?: string | null }) {
       <div className="flex flex-1 flex-col">
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-xs text-slate-500">
-            {contentType === "pdf" ? "Parsed PDF content (editable)" : "Format: [Chord]lyrics"}
+            {contentType === "pdf"
+              ? "Parsed PDF content (editable)"
+              : "Supports [Chord]lyrics and aligned bare or bracketed chord rows"}
           </span>
           <button type="button" onClick={handleAutoFormat}
-            className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${formatDone ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"}`}>
-            {formatDone ? "Done!" : "Auto Format"}
+            className="flex items-center gap-1 rounded-full bg-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-300 transition hover:bg-purple-500/30">
+            Analyze Format
           </button>
         </div>
         <textarea ref={textareaRef} name="extractedText" rows={contentType === "pdf" ? 10 : 14}
           defaultValue={defaultText ?? ""}
-          placeholder={contentType === "pdf" ? "Parsed text will appear here after upload…" : "[Em7]Today is gonna be the day..."}
+          onChange={() => setFormatResult(null)}
+          placeholder={contentType === "pdf" ? "Parsed text will appear here after upload…" : "Verse\nEm7       G\nToday is gonna be the day..."}
           className="w-full resize-none rounded-xl border border-white/10 bg-[#0d1421] px-3.5 py-3 font-mono text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-blue-500/50" />
+        {formatResult ? (
+          <div className="mt-2">
+            <AutoFormatFeedback result={formatResult} />
+          </div>
+        ) : null}
       </div>
     </div>
   );
