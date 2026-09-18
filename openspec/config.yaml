@@ -2,33 +2,40 @@ schema: spec-driven
 githubCopilot:
   cloudAgent: true
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS, Prisma, PostgreSQL/Neon, Vitest, ESLint, Node.js 22.13+, and Vercel deployment. Application Insights integration is planned.
+  Use cases: Maintain a personal guitar-song library; import and review PDF or external chord sources; organize songs by artist, genre, and custom list; and use responsive play-along, playlist, auto-scroll, and chord-diagram experiences.
+  Architecture: Prefer server-side App Router data access through lib/data.ts. Database reads are feature-gated and fall back to aligned demo data. Preserve review-first imports, normalized relational metadata, and the single-user model.
+  Security: Treat credentials, keys, tokens, connection strings, certificates, and encryption material as secrets. Never place secrets in code, source control, configuration, samples, infrastructure or pipeline files, logs, telemetry, fixtures, documentation, screenshots, or test evidence. Use Azure Key Vault and environment configuration, least-privilege identities and authorization, trust-boundary validation, parameterized database access, contextual output encoding, and leakage-safe email handling. Redact secrets and sensitive data from errors and evidence.
+  Testing: Use focused Vitest coverage for changed behavior, then run typecheck, lint, tests, and production build as appropriate. Security fixes require focused tests, relevant manual validation, security-scan reruns, and documented residual risk.
+  Deployment: Vercel builds generate Prisma, migrate, seed idempotently, and build the app; Neon uses pooled runtime and direct migration connections supplied only through protected environment configuration. Changes affecting persistence or telemetry need explicit release and rollback procedures.
+  Telemetry: Application Insights telemetry must be intentional, minimal, structured, and privacy-aware. Do not record chord-sheet content, uploaded files, credentials, connection values, authorization artifacts, or unnecessary personal data. Redact sensitive fields, constrain telemetry access and retention, and keep observability failures from breaking user flows.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Identify security, privacy, authorization, email, deployment, and telemetry impact when applicable; state non-goals and compatibility implications.
+    - Keep remediation scope and residual risks traceable without embedding secrets, sensitive evidence, or work-item references.
+  specs:
+    - Define testable acceptance criteria for trust-boundary validation, authorization, output encoding, parameterized data access, sensitive-data handling, and telemetry redaction when relevant.
+    - Require Application Insights events to use approved minimal fields and exclude secrets, sensitive payloads, and unnecessary personal data.
+    - Include observable release, rollback, and failure behavior for security- or telemetry-sensitive capabilities.
+  design:
+    - Document trust boundaries, data flows, identity and least-privilege decisions, secret retrieval through Azure Key Vault or environment configuration, and defense-in-depth choices where relevant.
+    - Describe telemetry event shape, redaction, sampling or retention considerations, access controls, failure isolation, and operational ownership without including real sensitive values.
+    - Record meaningful alternatives, migration and rollback strategy, and residual security or privacy risks.
+  tasks:
+    - Include focused automated tests, appropriate manual validation, relevant security scans, and traceable evidence for security-sensitive changes.
+    - Include Application Insights validation for event emission, redaction, failure isolation, and environment-specific configuration when telemetry changes.
+    - Include concise documentation and operational handover updates for release, rollback, monitoring, and residual risks.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+operations:
+  apply:
+    guidance:
+      - Validate all external input at trust boundaries, use parameterized Prisma/database access, preserve least privilege, encode output for its context, and prevent sensitive-data leakage in errors, email, logs, and telemetry.
+      - Retrieve secrets only through Azure Key Vault or protected environment configuration; never add secret-shaped placeholders or values to repository artifacts or evidence.
+      - For security changes, add focused tests, perform relevant manual checks, rerun applicable security scans, and record residual risks. For telemetry changes, verify redaction and that Application Insights outages do not break application behavior.
+      - Use the smallest relevant validation first, then run repository typecheck, lint, tests, and build before completion when code changes warrant them.
+  archive:
+    guidance:
+      - Confirm specifications and acceptance criteria reflect delivered security and telemetry behavior, including known residual risks.
+      - Preserve concise, sanitized test evidence, scan outcomes, release and rollback procedures, and operational handover details without secrets or sensitive data.
