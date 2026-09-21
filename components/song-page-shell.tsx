@@ -39,7 +39,7 @@ export function SongPageShell({ song, chordDefinitions }: SongPageShellProps) {
                 {song.title}
               </h1>
               <Link
-                href={`/artists/${encodeURIComponent(song.artist)}`}
+                href={`/artists/${encodeURIComponent(song.artist)}/play`}
                 className="mt-0.5 text-sm text-slate-400 transition hover:text-slate-200"
               >
                 {song.artist}

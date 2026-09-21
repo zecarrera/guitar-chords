@@ -10,6 +10,7 @@ context: |
   Testing: Use focused Vitest coverage for changed behavior, then run typecheck, lint, tests, and production build as appropriate. Security fixes require focused tests, relevant manual validation, security-scan reruns, and documented residual risk.
   Deployment: Vercel builds generate Prisma, migrate, seed idempotently, and build the app; Neon uses pooled runtime and direct migration connections supplied only through protected environment configuration. Changes affecting persistence or telemetry need explicit release and rollback procedures.
   Telemetry: Application Insights telemetry must be intentional, minimal, structured, and privacy-aware. Do not record chord-sheet content, uploaded files, credentials, connection values, authorization artifacts, or unnecessary personal data. Redact sensitive fields, constrain telemetry access and retention, and keep observability failures from breaking user flows.
+  Git workflow: Never create, edit, or apply work directly on the `main` branch. Before starting a new change, fetch the remote and verify the base is current; if the local base is behind, fast-forward it before creating or switching to a descriptive feature branch. If the current branch is already non-`main`, continue using it rather than creating another branch. Stop and report the blocker if the base cannot be updated or verified.
 
 rules:
   proposal:
@@ -31,11 +32,13 @@ rules:
 operations:
   apply:
     guidance:
+      - Before starting implementation, fetch the remote and verify the base is current. If the current branch is `main`, fast-forward it and create a descriptive feature branch before editing project files; if the current branch is already non-`main`, continue using it. Stop and report the blocker if the base cannot be updated or verified.
       - Validate all external input at trust boundaries, use parameterized Prisma/database access, preserve least privilege, encode output for its context, and prevent sensitive-data leakage in errors, email, logs, and telemetry.
       - Retrieve secrets only through Azure Key Vault or protected environment configuration; never add secret-shaped placeholders or values to repository artifacts or evidence.
       - For security changes, add focused tests, perform relevant manual checks, rerun applicable security scans, and record residual risks. For telemetry changes, verify redaction and that Application Insights outages do not break application behavior.
       - Use the smallest relevant validation first, then run repository typecheck, lint, tests, and build before completion when code changes warrant them.
   archive:
     guidance:
+      - Confirm the completed work remains on a non-`main` branch and that the branch was based on the latest available `main` before handing off for review.
       - Confirm specifications and acceptance criteria reflect delivered security and telemetry behavior, including known residual risks.
       - Preserve concise, sanitized test evidence, scan outcomes, release and rollback procedures, and operational handover details without secrets or sensitive data.
