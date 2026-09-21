@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
+import { getDisplayableStrummingPattern } from "@/lib/strumming-pattern";
 import type { ChordDefinition, Song } from "@/lib/types";
 
 type SongPageShellProps = {
@@ -15,8 +16,7 @@ export function SongPageShell({ song, chordDefinitions }: SongPageShellProps) {
   const [videoOpen, setVideoOpen] = useState(false);
 
   const hasCapo = song.capo > 0;
-  const hasStrummingPattern =
-    song.difficulty.trim().length > 0 && song.difficulty !== "Unspecified";
+  const strummingPattern = getDisplayableStrummingPattern(song.strummingPattern);
   const hasTutorialVideo = song.videoLinks.length > 0;
 
   return (
@@ -66,9 +66,9 @@ export function SongPageShell({ song, chordDefinitions }: SongPageShellProps) {
                 Capo {song.capo}
               </span>
             ) : null}
-            {hasStrummingPattern ? (
+            {strummingPattern ? (
               <span className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-medium tracking-wide text-slate-300">
-                {song.difficulty}
+                Strumming: {strummingPattern}
               </span>
             ) : null}
           </div>

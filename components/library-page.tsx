@@ -39,7 +39,7 @@ type SongRow = {
   artistId: string;
   artist: { name: string };
   capo: number | null;
-  difficulty: string | null;
+  strummingPattern: string | null;
   notes: string | null;
   status: string;
   genres: { id: string }[];
@@ -216,7 +216,7 @@ function AddSongModal({ artistNames, onClose }: { artistNames: string[]; onClose
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Capo"><input name="capo" type="number" min="0" max="11" defaultValue="0" className={inputCls} /></Field>
-              <Field label="Strumming Pattern"><input name="difficulty" placeholder="D DU UDU" className={inputCls} /></Field>
+              <Field label="Strumming Pattern"><input name="strummingPattern" placeholder="D DU UDU" className={inputCls} /></Field>
             </div>
             <Field label={<>Video URL <span className="text-slate-500">(optional)</span></>}>
               <input name="videoUrl" type="url" placeholder="https://youtube.com/..." className={inputCls} />
@@ -284,7 +284,7 @@ function EditSongModal({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Capo"><input name="capo" type="number" min="0" max="11" defaultValue={song.capo ?? 0} className={inputCls} /></Field>
-              <Field label="Strumming Pattern"><input name="difficulty" defaultValue={song.difficulty ?? ""} className={inputCls} /></Field>
+              <Field label="Strumming Pattern"><input name="strummingPattern" defaultValue={song.strummingPattern ?? ""} className={inputCls} /></Field>
             </div>
             <Field label="Scroll Speed">
               <input name="scrollSpeed" type="number" min="1" defaultValue={doc?.scrollSpeed ?? 24} className={inputCls} />
@@ -484,7 +484,7 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
                   <span className="font-semibold text-white">{song.title}</span>
                   <span>{song.artist.name}</span>
                   <span>{song.capo ?? 0}</span>
-                  <span className="text-slate-400">{song.difficulty || "—"}</span>
+                  <span className="text-slate-400">{song.strummingPattern || "—"}</span>
                   <span>
                     {song.videoLinks.length > 0 ? (
                       <a href={song.videoLinks[0].url} target="_blank" rel="noreferrer" className="text-cyan-400 transition hover:text-cyan-300">Link</a>
