@@ -253,6 +253,7 @@ export async function createSongAction(formData: FormData) {
   const title = readRequiredString(formData, "title");
   const slugInput = readOptionalString(formData, "slug");
   const artistId = readRequiredString(formData, "artistId");
+  const strummingPattern = readOptionalString(formData, "strummingPattern");
   const sourceType = readRequiredString(formData, "sourceType");
   const scrollSpeed = readOptionalNumber(formData, "scrollSpeed") ?? 24;
   const manualExtractedText = readOptionalMultilineString(formData, "extractedText");
@@ -276,6 +277,7 @@ export async function createSongAction(formData: FormData) {
       title,
       slug,
       status: "DRAFT",
+      strummingPattern,
       artist: {
         connect: {
           id: artistId,
@@ -309,7 +311,7 @@ export async function updateSongAction(formData: FormData) {
   const artistId = readRequiredString(formData, "artistId");
   const notes = readOptionalString(formData, "notes");
   const capo = readOptionalNumber(formData, "capo");
-  const difficulty = readOptionalString(formData, "difficulty");
+  const strummingPattern = readOptionalString(formData, "strummingPattern");
   const status = readRequiredString(formData, "status");
   const documentId = readOptionalString(formData, "documentId");
   const documentTitle = readRequiredString(formData, "documentTitle");
@@ -377,7 +379,7 @@ export async function updateSongAction(formData: FormData) {
       slug,
       notes,
       capo,
-      difficulty,
+      strummingPattern,
       status:
         status === "PUBLISHED"
           ? "PUBLISHED"
@@ -528,7 +530,7 @@ export async function createSongFromModalAction(formData: FormData) {
   const title = readRequiredString(formData, "title");
   const artistName = readRequiredString(formData, "artistName");
   const capo = readOptionalNumber(formData, "capo") ?? 0;
-  const difficulty = readOptionalString(formData, "difficulty") ?? "";
+  const strummingPattern = readOptionalString(formData, "strummingPattern");
   const videoUrl = readOptionalString(formData, "videoUrl");
   const extractedText = readOptionalMultilineString(formData, "extractedText");
   const pdfUpload = await readOptionalPdfUpload(formData, "pdfFile");
@@ -553,7 +555,7 @@ export async function createSongFromModalAction(formData: FormData) {
       title,
       slug,
       capo,
-      difficulty,
+      strummingPattern,
       status: "DRAFT",
       artist: { connect: { id: artist.id } },
       videoLinks: videoUrl
@@ -586,7 +588,7 @@ export async function updateSongFromModalAction(formData: FormData) {
   const artistId = readRequiredString(formData, "artistId");
   const notes = readOptionalString(formData, "notes");
   const capo = readOptionalNumber(formData, "capo");
-  const difficulty = readOptionalString(formData, "difficulty");
+  const strummingPattern = readOptionalString(formData, "strummingPattern");
   const status = readRequiredString(formData, "status");
   const documentId = readOptionalString(formData, "documentId");
   const documentTitle = readRequiredString(formData, "documentTitle");
@@ -645,7 +647,7 @@ export async function updateSongFromModalAction(formData: FormData) {
       slug,
       notes,
       capo,
-      difficulty,
+      strummingPattern,
       status:
         status === "PUBLISHED" ? "PUBLISHED" : status === "ARCHIVED" ? "ARCHIVED" : "DRAFT",
       artist: { connect: { id: artistId } },

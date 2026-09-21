@@ -111,7 +111,7 @@ async function seed() {
         title: song.title,
         slug: song.slug,
         capo: song.capo,
-        difficulty: song.difficulty,
+        strummingPattern: song.strummingPattern,
         status: toSongStatus(song.status),
         artist: {
           connect: {

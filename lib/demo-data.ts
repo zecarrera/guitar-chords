@@ -16,7 +16,7 @@ export const songs: Song[] = [
     lists: ["Warm-up Set", "Sunday Service"],
     sourceType: "pdf",
     capo: 2,
-    difficulty: "Intermediate",
+    strummingPattern: "D DU UDU",
     status: "published",
     scrollSpeed: 24,
     importNotes:
@@ -72,7 +72,7 @@ export const songs: Song[] = [
     lists: ["Open Mic", "Late Night Set"],
     sourceType: "external_link",
     capo: 0,
-    difficulty: "Advanced",
+    strummingPattern: "D D DU UDU",
     status: "published",
     scrollSpeed: 30,
     importNotes:
@@ -128,7 +128,7 @@ export const songs: Song[] = [
     lists: ["Road Trip", "Easy Requests"],
     sourceType: "pdf",
     capo: 1,
-    difficulty: "Beginner",
+    strummingPattern: "D DU DU",
     status: "draft",
     scrollSpeed: 18,
     importNotes:

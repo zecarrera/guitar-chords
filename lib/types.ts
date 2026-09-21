@@ -42,7 +42,7 @@ export type Song = {
   lists: string[];
   sourceType: SourceType;
   capo: number;
-  difficulty: string;
+  strummingPattern: string | null;
   status: "draft" | "published";
   scrollSpeed: number;
   importNotes: string;

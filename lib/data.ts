@@ -153,7 +153,7 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
       lists: song.customLists.map((list) => list.name),
       sourceType,
       capo: song.capo ?? 0,
-      difficulty: song.difficulty ?? "Unspecified",
+      strummingPattern: song.strummingPattern,
       status: song.status === "PUBLISHED" ? "published" : "draft",
       scrollSpeed: primaryDocument?.scrollSpeed ?? 24,
       importNotes:
