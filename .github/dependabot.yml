@@ -15,3 +15,10 @@ updates:
           - "react-dom"
           - "@types/react"
           - "@types/react-dom"
+      # prisma and @prisma/client are the CLI/runtime pair for the same
+      # generated client and must be upgraded together to avoid schema/client
+      # version mismatches across split PRs.
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/client"
