@@ -100,6 +100,27 @@ Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. 
 - Node.js version is set to **22.x** in the Vercel project settings (Project Settings → General → Node.js Version)
 - PDF uploads are capped at **4.5 MB** due to Vercel Hobby's infrastructure-level request body limit
 
+## Security scanning
+
+Every pull request targeting `main` (and every push to `main`) runs
+`.github/workflows/security-scan.yml`, which checks for known-vulnerable
+dependencies and vulnerable code patterns at no cost:
+
+- **`npm audit --audit-level=high`** — fails the check only when a **high**
+  or **critical** severity dependency advisory is found; low/moderate
+  findings are reported by `npm audit` but do not fail the PR
+- **CodeQL analysis** (`javascript-typescript`) — scans code for vulnerable
+  patterns (e.g. injection); results appear as alerts under the repo's
+  **Security → Code scanning alerts** tab, not in the job's pass/fail status
+- **Dependabot** (`.github/dependabot.yml`) — opens a weekly PR for outdated
+  npm dependencies; **Dependabot alerts** and **Dependabot security
+  updates** must be enabled once, manually, under **Settings → Code
+  security** (there is no committable file for that toggle)
+
+If the `npm audit` check fails on a PR, run `npm audit` locally to see the
+affected package and whether `npm audit fix` (or `npm audit fix --force` for
+breaking upgrades) resolves it before merging.
+
 ## Neon setup notes
 
 1. Create a free Neon project.
