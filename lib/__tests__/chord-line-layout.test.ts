@@ -274,3 +274,54 @@ describe("layoutChordLanes", () => {
     expect(layout.chords.map((chord) => chord.lane)).toEqual([0, 0]);
   });
 });
+
+describe("short lyric with chords beyond its end", () => {
+  const positioned = buildPositionedChordLine({
+    chords: [
+      { anchorColumn: 0, label: "[Am]", name: "Am" },
+      { anchorColumn: 12, label: "[G]", name: "G" },
+      { anchorColumn: 24, label: "[D]", name: "D" },
+      { anchorColumn: 36, label: "[C]", name: "C" },
+    ],
+    kind: "anchored",
+    lyricText: "Grasping",
+  })!;
+
+  it("keeps separated chords on one lane when the line fits", () => {
+    const rows = wrapPositionedChordLine(positioned, 60);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].laneCount).toBe(1);
+    expect(rows[0].chords.map((chord) => chord.column)).toEqual([0, 12, 24, 36]);
+  });
+
+  it.each([10, 16, 20, 30, 60])(
+    "keeps every chord once, in order, within %i columns",
+    (maxColumns) => {
+      const rows = wrapPositionedChordLine(positioned, maxColumns);
+
+      expect(
+        rows.flatMap((row) => row.chords.map((chord) => chord.name)),
+      ).toEqual(["Am", "G", "D", "C"]);
+
+      for (const row of rows) {
+        expect(row.laneCount).toBe(1);
+
+        for (const chord of row.chords) {
+          expect(chord.column + chord.label.length).toBeLessThanOrEqual(
+            Math.max(maxColumns, row.lyricText.length),
+          );
+        }
+      }
+    },
+  );
+
+  it("still uses lanes for chords that truly overlap", () => {
+    const layout = layoutChordLanes([
+      { anchorColumn: 10, label: "[Asus4]", name: "Asus4" },
+      { anchorColumn: 12, label: "[G]", name: "G" },
+    ]);
+
+    expect(layout.laneCount).toBe(2);
+  });
+});
