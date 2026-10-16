@@ -508,7 +508,13 @@ export async function deleteVideoLinkAction(formData: FormData) {
 export async function updateScrollSpeedAction(slug: string, speed: number) {
   const song = await prisma.song.findUnique({
     where: { slug },
-    select: { documents: { take: 1, select: { id: true } } },
+    select: {
+      documents: {
+        take: 1,
+        select: { id: true },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      },
+    },
   });
 
   const documentId = song?.documents[0]?.id;

@@ -15,6 +15,10 @@ import {
   computeMaxColumns,
   wrapPositionedChordLine,
 } from "@/lib/chord-line-layout";
+import {
+  getCurrentPlaybackSpeed,
+  getSpeedToPersistOnPlaybackEnd,
+} from "@/lib/playback-speed";
 import type {
   AnchoredChordLine,
   ChordDefinition,
@@ -37,7 +41,6 @@ type AutoScrollReaderProps = {
   documentUrl?: string | null;
 };
 
-const speedStorageKey = "guitar-chords:auto-scroll-speed";
 const fontScaleStorageKey = "guitar-chords:reader-font-scale";
 const guitarStrings = ["E", "A", "D", "G", "B", "e"];
 const minimumScrollSpeed = 6;
@@ -57,24 +60,8 @@ function clampFontScale(value: number) {
   return Math.min(maximumFontScale, Math.max(minimumFontScale, Math.round(value)));
 }
 
-function subscribeToSpeedStore() {
+function subscribeToFontScaleStore() {
   return () => {};
-}
-
-function getStoredSpeedSnapshot() {
-  const storedSpeed = window.localStorage.getItem(speedStorageKey);
-
-  if (!storedSpeed) {
-    return null;
-  }
-
-  const parsedSpeed = Number(storedSpeed);
-
-  return Number.isFinite(parsedSpeed) && parsedSpeed > 0 ? parsedSpeed : null;
-}
-
-function getServerSpeedSnapshot() {
-  return null;
 }
 
 function getStoredFontScaleSnapshot() {
@@ -420,13 +407,8 @@ export function AutoScrollReader({
   const observedContentWidthRef = useRef<number | null>(null);
   const scrollPositionRef = useRef(0);
   const videoPlayerRef = useRef<HTMLDivElement>(null);
-  const savedSpeed = useSyncExternalStore(
-    subscribeToSpeedStore,
-    getStoredSpeedSnapshot,
-    getServerSpeedSnapshot,
-  );
   const savedFontScale = useSyncExternalStore(
-    subscribeToSpeedStore,
+    subscribeToFontScaleStore,
     getStoredFontScaleSnapshot,
     getServerFontScaleSnapshot,
   );
@@ -451,7 +433,7 @@ export function AutoScrollReader({
     left: number;
     top: number;
   } | null>(null);
-  const speed = manualSpeed ?? savedSpeed ?? defaultSpeed;
+  const speed = getCurrentPlaybackSpeed(defaultSpeed, manualSpeed);
   const fontScale = manualFontScale ?? savedFontScale ?? defaultFontScale;
   // isPlaying reflects both the countdown and active scrolling, so the wake
   // lock, layout, and controls treat "about to play" the same as "playing".
@@ -507,10 +489,6 @@ export function AutoScrollReader({
   }
 
   useEffect(() => {
-    window.localStorage.setItem(speedStorageKey, String(speed));
-  }, [speed]);
-
-  useEffect(() => {
     window.localStorage.setItem(fontScaleStorageKey, String(fontScale));
   }, [fontScale]);
 
@@ -547,9 +525,17 @@ export function AutoScrollReader({
 
   const wasPlayingRef = useRef(false);
   useEffect(() => {
-    if (wasPlayingRef.current && !isPlaying && songSlug && speed !== defaultSpeed) {
-      updateScrollSpeedAction(songSlug, speed);
+    const speedToPersist = getSpeedToPersistOnPlaybackEnd({
+      wasPlaying: wasPlayingRef.current,
+      isPlaying,
+      speed,
+      defaultSpeed,
+    });
+
+    if (songSlug && speedToPersist !== null) {
+      updateScrollSpeedAction(songSlug, speedToPersist);
     }
+
     wasPlayingRef.current = isPlaying;
   }, [isPlaying, songSlug, speed, defaultSpeed]);
 
