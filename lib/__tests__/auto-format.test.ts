@@ -4,6 +4,9 @@ import {
   applyAutoFormatFixes,
   autoFormatChordSheet,
 } from "@/lib/auto-format";
+import { layoutChordLanes } from "@/lib/chord-line-layout";
+import { parseChordSections } from "@/lib/chord-sections";
+import type { AnchoredChordLine } from "@/lib/types";
 
 describe("autoFormatChordSheet", () => {
   it("preserves bare paired notation and exact source columns", () => {
@@ -209,5 +212,45 @@ describe("chord layout risk diagnostics", () => {
       expect.arrayContaining(layoutCodes),
     );
     expect(layoutDiagnostics(result.projectedText).length).toBeGreaterThan(0);
+  });
+});
+
+describe("layout-risk parity with the reader", () => {
+  const cases = [
+    "Verse\nAm G\nSing it loudly now",
+    "Verse\nAm   G   D\nSing it loudly now",
+    "Verse\nAm  C#m7\nSing it loudly now",
+    "Intro\nAm    G\nC     F",
+    "Intro\nAm    G\nSing it loudly now\nC     F",
+  ];
+
+  it.each(cases)("agrees with reader layout for %j", (input) => {
+    const flaggedLines = new Set(
+      autoFormatChordSheet(input)
+        .diagnostics.filter((d) =>
+          ["chords-too-close", "consecutive-chord-rows"].includes(d.code),
+        )
+        .map((d) => `${d.code}`),
+    );
+    const readerLines = parseChordSections(input).flatMap(
+      (section) => section.lines,
+    );
+    const anchored = readerLines.filter(
+      (line): line is AnchoredChordLine => typeof line !== "string",
+    );
+    const readerStacks = anchored.some(
+      (line) => layoutChordLanes(line.chords).laneCount > 1,
+    );
+    const readerSeparateRows = anchored.filter(
+      (line) => line.lyricText === "",
+    ).length;
+
+    expect(flaggedLines.has("chords-too-close")).toBe(readerStacks);
+    expect(flaggedLines.has("consecutive-chord-rows")).toBe(
+      input.includes("Am    G\nC     F"),
+    );
+    expect(readerSeparateRows).toBe(
+      input.includes("Am    G\nC     F") ? 2 : input.includes("C     F") ? 1 : 0,
+    );
   });
 });
