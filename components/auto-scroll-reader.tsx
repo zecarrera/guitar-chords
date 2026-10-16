@@ -15,6 +15,7 @@ import {
   computeMaxColumns,
   wrapPositionedChordLine,
 } from "@/lib/chord-line-layout";
+import { getPhaseWhenLayoutReady } from "@/lib/playback-phase";
 import {
   getCurrentPlaybackSpeed,
   getSpeedToPersistOnPlaybackEnd,
@@ -416,9 +417,8 @@ export function AutoScrollReader({
   const [manualFontScale, setManualFontScale] = useState<number | null>(null);
   const [isPlayModeActive, setIsPlayModeActive] = useState(false);
   const [playbackPhase, setPlaybackPhase] = useState<
-    "idle" | "preparing" | "countingDown" | "scrolling"
+    "idle" | "preparing" | "scrolling"
   >("idle");
-  const [countdownValue, setCountdownValue] = useState(0);
   const [maxColumns, setMaxColumns] = useState<number | null>(null);
   const [isLayoutReady, setIsLayoutReady] = useState(false);
   const [layoutRevision, setLayoutRevision] = useState(0);
@@ -435,8 +435,8 @@ export function AutoScrollReader({
   } | null>(null);
   const speed = getCurrentPlaybackSpeed(defaultSpeed, manualSpeed);
   const fontScale = manualFontScale ?? savedFontScale ?? defaultFontScale;
-  // isPlaying reflects both the countdown and active scrolling, so the wake
-  // lock, layout, and controls treat "about to play" the same as "playing".
+  // isPlaying reflects both layout preparation and active scrolling, so the
+  // wake lock, layout, and controls treat "about to play" the same as "playing".
   const isPlaying = playbackPhase !== "idle";
   const readerViewportRatio =
     viewportSize && viewportSize.width >= 1024
@@ -456,14 +456,12 @@ export function AutoScrollReader({
     lineHeight: `calc(var(--reader-line-height) * ${fontScale / 100})`,
   };
 
-  // Starts (or restarts) the get-ready countdown; scrolling only begins once
-  // it reaches zero (see the countdown effect below). Layout is already
-  // wrap-computed at this point since wrapping applies unconditionally.
+  // Starts (or restarts) playback preparation; scrolling begins as soon as the
+  // layout is ready (see the effect below), with no timed delay.
   function startPlayback() {
     setIsPlayModeActive(true);
     setIsLayoutReady(false);
     setLayoutRevision((revision) => revision + 1);
-    setCountdownValue(3);
     setPlaybackPhase("preparing");
   }
 
@@ -477,7 +475,7 @@ export function AutoScrollReader({
     } else if (playbackPhase === "scrolling") {
       stopPlayback();
     }
-    // preparing/countingDown: no-op — playback preparation runs to completion.
+    // preparing: no-op — playback preparation runs to completion.
   }
 
   function updateSpeed(nextSpeed: number) {
@@ -499,29 +497,13 @@ export function AutoScrollReader({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Ticks the get-ready countdown down to zero, then hands off to scrolling.
   useEffect(() => {
-    if (playbackPhase === "preparing" && isLayoutReady) {
-      setPlaybackPhase("countingDown");
+    const nextPhase = getPhaseWhenLayoutReady(playbackPhase, isLayoutReady);
+
+    if (nextPhase !== playbackPhase) {
+      setPlaybackPhase(nextPhase);
     }
   }, [isLayoutReady, playbackPhase]);
-
-  useEffect(() => {
-    if (playbackPhase !== "countingDown") {
-      return;
-    }
-
-    if (countdownValue <= 0) {
-      setPlaybackPhase("scrolling");
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setCountdownValue((value) => value - 1);
-    }, 1000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [playbackPhase, countdownValue]);
 
   const wasPlayingRef = useRef(false);
   useEffect(() => {
@@ -833,20 +815,13 @@ export function AutoScrollReader({
           </div>
         </div>
 
-        {playbackPhase === "preparing" || playbackPhase === "countingDown" ? (
+        {playbackPhase === "preparing" ? (
           <div
             role="status"
             aria-live="assertive"
             className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 bg-slate-950/90"
           >
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-300">
-              Get ready
-            </p>
-            {playbackPhase === "countingDown" ? (
-              <p className="text-7xl font-bold text-white">{countdownValue}</p>
-            ) : (
-              <p className="text-lg font-semibold text-white">Preparing layout...</p>
-            )}
+            <p className="text-lg font-semibold text-white">Preparing layout...</p>
           </div>
         ) : null}
 
