@@ -62,19 +62,33 @@ describe("parseChordSections", () => {
     ]);
   });
 
-  it("pairs and clamps a trailing chord beyond the lyric text", () => {
+  it("pairs a trailing chord beyond the lyric text without clamping", () => {
     const [section] = parseChordSections("Verse\n[Am]          [G]\nSing");
 
     expect(section.lines).toEqual([
       {
         chords: [
           { anchorColumn: 0, label: "[Am]", name: "Am" },
-          { anchorColumn: 4, label: "[G]", name: "G" },
+          { anchorColumn: 14, label: "[G]", name: "G" },
         ],
         kind: "anchored",
         lyricText: "Sing",
       },
     ]);
+  });
+
+  it("keeps distinct source columns for chords beyond a short lyric", () => {
+    const [section] = parseChordSections(
+      "Verse\nAm     G     D     C\nGrasping to control",
+    );
+    const line = section.lines[0];
+
+    expect(typeof line).not.toBe("string");
+    expect(
+      (line as { chords: Array<{ anchorColumn: number }> }).chords.map(
+        (chord) => chord.anchorColumn,
+      ),
+    ).toEqual([0, 7, 13, 19]);
   });
 
   it("preserves inline chord notation as a source string", () => {
@@ -93,7 +107,7 @@ describe("parseChordSections", () => {
         chords: [
           { anchorColumn: 0, label: "[Am]", name: "Am" },
           { anchorColumn: 11, label: "[G]", name: "G" },
-          { anchorColumn: 16, label: "[D]", name: "D" },
+          { anchorColumn: 18, label: "[D]", name: "D" },
         ],
         kind: "anchored",
         lyricText: "Some lyrics here",

@@ -134,9 +134,10 @@ function computeRowBoundaries(
   candidates: number[],
   contentWidth: number,
   maxColumns: number,
+  initialStart = 0,
 ): number[] {
-  const boundaries = [0];
-  let rowStart = 0;
+  const boundaries = [initialStart];
+  let rowStart = initialStart;
 
   while (rowStart < contentWidth) {
     const limit = rowStart + maxColumns;
@@ -220,14 +221,48 @@ function computeLyricRowBoundaries(
   return boundaries;
 }
 
+// Chords past the end of the lyric keep their own source column so they are
+// never collapsed onto the lyric's final position.
 function getChordOwnershipColumn(lyricText: string, anchorColumn: number) {
-  let column = Math.min(anchorColumn, lyricText.length);
+  if (anchorColumn >= lyricText.length) {
+    return anchorColumn;
+  }
+
+  let column = anchorColumn;
 
   while (column < lyricText.length && /\s/.test(lyricText[column])) {
     column += 1;
   }
 
   return column;
+}
+
+// Splits the region after the lyric into rows at chord-group boundaries so
+// overflow chords wrap without collapsing, splitting a label, or reordering.
+function computeOverflowBoundaries(
+  chords: PositionedChord[],
+  lyricLength: number,
+  contentWidth: number,
+  maxColumns: number,
+): number[] {
+  const groups = mergeSpans(
+    chords
+      .filter((chord) => chord.anchorColumn >= lyricLength)
+      .map((chord) => ({
+        end: chord.anchorColumn + chord.label.length,
+        start: chord.anchorColumn,
+      })),
+  );
+  const candidates = Array.from(
+    new Set([lyricLength, contentWidth, ...groups.map((group) => group.start)]),
+  ).sort((a, b) => a - b);
+
+  return computeRowBoundaries(
+    candidates,
+    contentWidth,
+    maxColumns,
+    lyricLength,
+  ).slice(1);
 }
 
 export function layoutChordLanes(chords: PositionedChord[]): {
@@ -293,7 +328,14 @@ export function wrapPositionedChordLine(
           );
 
           if (contentWidth > lyricText.length) {
-            lyricBoundaries.push(contentWidth);
+            lyricBoundaries.push(
+              ...computeOverflowBoundaries(
+                chords,
+                lyricText.length,
+                contentWidth,
+                maxColumns,
+              ),
+            );
           }
 
           return lyricBoundaries;
@@ -345,10 +387,17 @@ export function wrapPositionedChordLine(
             (isLastRow && ownershipColumn === end))
         );
       })
-      .map((chord) => ({
-        ...chord,
-        anchorColumn: Math.max(0, chord.anchorColumn - start - trimOffset),
-      }));
+      .map((chord) => ({ ...chord }));
+    // Rows past the lyric hold only overflow chords, so rebase them to the
+    // row's first chord instead of keeping a leading gap.
+    const rowOrigin =
+      kind === "lyrics" && start >= lyricText.length && rowChords.length > 0
+        ? Math.min(...rowChords.map((chord) => chord.anchorColumn))
+        : start + trimOffset;
+
+    for (const chord of rowChords) {
+      chord.anchorColumn = Math.max(0, chord.anchorColumn - rowOrigin);
+    }
     const laidOut = layoutChordLanes(rowChords);
 
     return { ...laidOut, lyricText: rowLyricText };

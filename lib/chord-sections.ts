@@ -17,10 +17,7 @@ function buildAnchoredLine(
 
   return {
     chords: classification.tokens.map((token) => ({
-      anchorColumn:
-        lyricText.length > 0
-          ? Math.min(token.start, lyricText.length)
-          : token.start,
+      anchorColumn: token.start,
       label: token.label,
       name: token.name,
     })),
