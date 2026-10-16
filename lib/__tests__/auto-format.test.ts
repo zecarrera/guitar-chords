@@ -44,7 +44,7 @@ describe("autoFormatChordSheet", () => {
   });
 
   it("reports unknown diagrams without rejecting valid syntax", () => {
-    const result = autoFormatChordSheet("Verse\nG13 Cmaj9\nJazz words");
+    const result = autoFormatChordSheet("Verse\nG13   Cmaj9\nJazz words and more");
 
     expect(result.recognizedPairs[0].chords.map((chord) => chord.name)).toEqual([
       "G13",
@@ -156,5 +156,58 @@ describe("autoFormatChordSheet", () => {
         expect.objectContaining({ code: "ambiguous-mixed-row" }),
       );
     }
+  });
+});
+
+describe("chord layout risk diagnostics", () => {
+  const layoutCodes = [
+    "chord-overflows-lyric",
+    "chords-too-close",
+    "consecutive-chord-rows",
+  ];
+  const layoutDiagnostics = (input: string) =>
+    autoFormatChordSheet(input).diagnostics.filter((diagnostic) =>
+      layoutCodes.includes(diagnostic.code),
+    );
+
+  it("warns when chords start past the paired lyric", () => {
+    expect(
+      layoutDiagnostics("Verse\nAm       G         D\nGrasping"),
+    ).toEqual([
+      expect.objectContaining({
+        code: "chord-overflows-lyric",
+        line: 2,
+        severity: "warning",
+      }),
+    ]);
+  });
+
+  it("warns once at the first line of consecutive chord-only rows", () => {
+    expect(layoutDiagnostics("Intro\nAm    G\nC     F\nD     A")).toEqual([
+      expect.objectContaining({ code: "consecutive-chord-rows", line: 2 }),
+    ]);
+  });
+
+  it("warns when adjacent chords are too close together", () => {
+    expect(layoutDiagnostics("Verse\nAm G\nSing it loudly now")).toEqual([
+      expect.objectContaining({ code: "chords-too-close", line: 2 }),
+    ]);
+  });
+
+  it("reports nothing for a well-formed layout", () => {
+    expect(
+      layoutDiagnostics("Verse\nAm       G\nSing it loudly now\n\nIntro\nC     F"),
+    ).toEqual([]);
+  });
+
+  it("does not mutate text or add layout risks to safe fixes", () => {
+    const input = "Verse\nAm G       D  \nSing";
+    const result = autoFormatChordSheet(input);
+
+    expect(result.formattedText).toBe(input);
+    expect(result.safeFixes.map((fix) => fix.code)).not.toEqual(
+      expect.arrayContaining(layoutCodes),
+    );
+    expect(layoutDiagnostics(result.projectedText).length).toBeGreaterThan(0);
   });
 });

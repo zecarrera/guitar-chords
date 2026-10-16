@@ -13,6 +13,9 @@ export type ChordSheetDiagnostic = {
   code:
     | "ambiguous-mixed-row"
     | "bar-delimited-row"
+    | "chord-overflows-lyric"
+    | "chords-too-close"
+    | "consecutive-chord-rows"
     | "malformed-brackets"
     | "missing-chord-diagram"
     | "tab-alignment";
@@ -20,6 +23,12 @@ export type ChordSheetDiagnostic = {
   message: string;
   severity: "info" | "warning";
 };
+
+export const chordLayoutRiskCodes: ReadonlyArray<ChordSheetDiagnostic["code"]> = [
+  "chord-overflows-lyric",
+  "chords-too-close",
+  "consecutive-chord-rows",
+];
 
 export type RecognizedChordRow = {
   chords: Array<Pick<ParsedChordToken, "name" | "start">>;
@@ -55,6 +64,22 @@ function rowSummary(
     line,
     notation: classification.notation,
   };
+}
+
+// Mirrors the reader: a chord renders its bracketed label, and the next chord
+// needs at least one column after it or it is moved to another lane.
+function findTightChord(
+  tokens: ParsedChordToken[],
+): [ParsedChordToken, ParsedChordToken] | null {
+  for (let index = 1; index < tokens.length; index += 1) {
+    const previous = tokens[index - 1];
+
+    if (tokens[index].start < previous.start + previous.label.length + 1) {
+      return [previous, tokens[index]];
+    }
+  }
+
+  return null;
 }
 
 export function autoFormatChordSheet(text: string): AutoFormatResult {
@@ -110,7 +135,32 @@ export function autoFormatChordSheet(text: string): AutoFormatResult {
 
       recordMissingDiagrams(lineNumber, classification.tokens);
 
+      const tightChords = findTightChord(classification.tokens);
+
+      if (tightChords) {
+        diagnostics.push({
+          code: "chords-too-close",
+          line: lineNumber,
+          message: `${tightChords[0].name} and ${tightChords[1].name} are too close together and may overlap or stack. Add spaces between them.`,
+          severity: "warning",
+        });
+      }
+
       if (canPair) {
+        const lyricLength = nextLine.trimEnd().length;
+        const overflowing = classification.tokens.filter(
+          (token) => token.start >= lyricLength,
+        );
+
+        if (overflowing.length > 0) {
+          diagnostics.push({
+            code: "chord-overflows-lyric",
+            line: lineNumber,
+            message: `${overflowing.map((token) => token.name).join(", ")} start${overflowing.length === 1 ? "s" : ""} past the end of the lyric on line ${lineNumber + 1}. Extend the lyric line or move the chords closer.`,
+            severity: "warning",
+          });
+        }
+
         recognizedPairs.push({ ...summary, lyricLine: lineNumber + 1 });
         index += 1;
       } else {
@@ -127,6 +177,29 @@ export function autoFormatChordSheet(text: string): AutoFormatResult {
       recordMissingDiagrams(lineNumber, inlineTokens);
     }
   }
+
+  let runStart = 0;
+
+  for (let position = 0; position < instrumentalRows.length; position += 1) {
+    const isRunEnd =
+      position === instrumentalRows.length - 1 ||
+      instrumentalRows[position + 1].line !== instrumentalRows[position].line + 1;
+
+    if (isRunEnd) {
+      if (position > runStart) {
+        diagnostics.push({
+          code: "consecutive-chord-rows",
+          line: instrumentalRows[runStart].line,
+          message: `${position - runStart + 1} consecutive chord-only rows each display as their own line. Add lyrics between them or merge them if they belong on one line.`,
+          severity: "warning",
+        });
+      }
+
+      runStart = position + 1;
+    }
+  }
+
+  diagnostics.sort((a, b) => a.line - b.line);
 
   return {
     analyzedText: text,

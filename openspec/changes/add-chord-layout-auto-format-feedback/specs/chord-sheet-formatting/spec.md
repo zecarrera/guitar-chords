@@ -12,7 +12,7 @@ Auto Format analysis SHALL identify source shapes that can cause chords to rende
 - **THEN** analysis returns a layout-risk warning identifying the first affected line and stating that each row will display as its own line
 
 #### Scenario: Chords too close together
-- **WHEN** adjacent chord tokens in one recognized row begin closer together than the longer of their labels' widths plus one space
+- **WHEN** adjacent chord tokens in one recognized row begin closer together than the previous chord's rendered label width plus one space
 - **THEN** analysis returns a layout-risk warning for that line stating that the chords may overlap or stack
 
 #### Scenario: Well-formed layout

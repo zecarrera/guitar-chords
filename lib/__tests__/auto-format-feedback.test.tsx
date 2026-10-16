@@ -17,10 +17,23 @@ describe("AutoFormatFeedback", () => {
     expect(markup).toContain("unsupported repeat annotation");
   });
 
+  it("renders layout-risk warnings under their own heading", () => {
+    const markup = renderToStaticMarkup(
+      <AutoFormatFeedback
+        result={autoFormatChordSheet("Verse\nAm       G         D\nGrasping")}
+      />,
+    );
+
+    expect(markup).toContain("1 row needs review");
+    expect(markup).toContain("Layout may stack chords");
+    expect(markup).toContain("Line 2:");
+    expect(markup).not.toContain("Analysis complete");
+  });
+
   it("renders a clean summary and missing-diagram information", () => {
     const markup = renderToStaticMarkup(
       <AutoFormatFeedback
-        result={autoFormatChordSheet("Verse\nG13 Cmaj9\nJazz words")}
+        result={autoFormatChordSheet("Verse\nG13   Cmaj9\nJazz words and more")}
       />,
     );
 
