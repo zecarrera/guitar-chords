@@ -65,6 +65,19 @@ type LibraryPageProps = {
   customLists: ListRow[];
 };
 
+type SearchableSong = Pick<SongRow, "title" | "artist">;
+
+export function filterLibrarySongs<T extends SearchableSong>(songs: T[], query: string) {
+  if (!query.trim()) return songs;
+
+  const normalizedQuery = query.toLowerCase();
+  return songs.filter(
+    (song) =>
+      song.title.toLowerCase().includes(normalizedQuery) ||
+      song.artist.name.toLowerCase().includes(normalizedQuery),
+  );
+}
+
 /* ─── Icons ──────────────────────────────────────────── */
 function PlayIcon() {
   return (
@@ -412,11 +425,7 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
   const [editingArtist, setEditingArtist] = useState<ArtistRow | null>(null);
   const [confirmDeleteArtist, setConfirmDeleteArtist] = useState<ArtistRow | null>(null);
 
-  const filteredSongs = songs.filter((s) => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return s.title.toLowerCase().includes(q) || s.artist.name.toLowerCase().includes(q);
-  });
+  const filteredSongs = filterLibrarySongs(songs, query);
 
   const filteredArtists = artists.filter(
     (a) => !query.trim() || a.name.toLowerCase().includes(query.toLowerCase()),
@@ -426,15 +435,74 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
 
   return (
     <>
-      {/* Mobile guard */}
-      <div className="flex flex-col items-center justify-center py-20 text-center sm:hidden">
-        <svg className="mb-4 h-12 w-12 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />
-        </svg>
-        <h2 className="text-lg font-semibold text-white">Desktop only</h2>
-        <p className="mt-2 max-w-xs text-sm text-slate-400">
-          The Library is only available on desktop. Please open it on a larger screen to manage your songs.
-        </p>
+      <div className="sm:hidden">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold text-white">Library</h1>
+          <button
+            type="button"
+            aria-label="Add song (disabled on mobile)"
+            disabled
+            className="flex cursor-not-allowed items-center gap-1.5 rounded-xl bg-blue-500/40 px-4 py-2 text-sm font-semibold text-white/60"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Add Song
+          </button>
+        </div>
+
+        <input
+          type="search"
+          aria-label="Search songs"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search songs..."
+          className="mb-4 w-full rounded-xl border border-white/10 bg-[#131f35] px-4 py-3 text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-white/20"
+        />
+
+        {filteredSongs.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-500">No songs found.</p>
+        ) : (
+          <div className="space-y-3">
+            {filteredSongs.map((song) => (
+              <article key={song.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div>
+                  <h2 className="font-semibold text-white">{song.title}</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {song.artist.name}{song.capo ? ` · capo ${song.capo}` : ""}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      aria-label="Edit song (disabled on mobile)"
+                      disabled
+                      className="cursor-not-allowed text-slate-600"
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete song (disabled on mobile)"
+                      disabled
+                      className="cursor-not-allowed text-slate-600"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                  <Link
+                    href={`/songs/${song.slug}`}
+                    aria-label="Play song"
+                    title="Play song"
+                    className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-300"
+                  >
+                    <PlayIcon />
+                    Play
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Desktop view */}
