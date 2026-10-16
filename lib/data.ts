@@ -81,9 +81,7 @@ async function buildDatabaseSnapshot(): Promise<Snapshot> {
             scrollSpeed: true,
             importSource: true,
           },
-          orderBy: {
-            createdAt: "asc",
-          },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         },
         videoLinks: {
           orderBy: {
