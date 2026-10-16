@@ -4,6 +4,9 @@ import {
   applyAutoFormatFixes,
   autoFormatChordSheet,
 } from "@/lib/auto-format";
+import { layoutChordLanes } from "@/lib/chord-line-layout";
+import { parseChordSections } from "@/lib/chord-sections";
+import type { AnchoredChordLine } from "@/lib/types";
 
 describe("autoFormatChordSheet", () => {
   it("preserves bare paired notation and exact source columns", () => {
@@ -44,7 +47,7 @@ describe("autoFormatChordSheet", () => {
   });
 
   it("reports unknown diagrams without rejecting valid syntax", () => {
-    const result = autoFormatChordSheet("Verse\nG13 Cmaj9\nJazz words");
+    const result = autoFormatChordSheet("Verse\nG13   Cmaj9\nJazz words and more");
 
     expect(result.recognizedPairs[0].chords.map((chord) => chord.name)).toEqual([
       "G13",
@@ -156,5 +159,98 @@ describe("autoFormatChordSheet", () => {
         expect.objectContaining({ code: "ambiguous-mixed-row" }),
       );
     }
+  });
+});
+
+describe("chord layout risk diagnostics", () => {
+  const layoutCodes = [
+    "chord-overflows-lyric",
+    "chords-too-close",
+    "consecutive-chord-rows",
+  ];
+  const layoutDiagnostics = (input: string) =>
+    autoFormatChordSheet(input).diagnostics.filter((diagnostic) =>
+      layoutCodes.includes(diagnostic.code),
+    );
+
+  it("warns when chords start past the paired lyric", () => {
+    expect(
+      layoutDiagnostics("Verse\nAm       G         D\nGrasping"),
+    ).toEqual([
+      expect.objectContaining({
+        code: "chord-overflows-lyric",
+        line: 2,
+        severity: "warning",
+      }),
+    ]);
+  });
+
+  it("warns once at the first line of consecutive chord-only rows", () => {
+    expect(layoutDiagnostics("Intro\nAm    G\nC     F\nD     A")).toEqual([
+      expect.objectContaining({ code: "consecutive-chord-rows", line: 2 }),
+    ]);
+  });
+
+  it("warns when adjacent chords are too close together", () => {
+    expect(layoutDiagnostics("Verse\nAm G\nSing it loudly now")).toEqual([
+      expect.objectContaining({ code: "chords-too-close", line: 2 }),
+    ]);
+  });
+
+  it("reports nothing for a well-formed layout", () => {
+    expect(
+      layoutDiagnostics("Verse\nAm       G\nSing it loudly now\n\nIntro\nC     F"),
+    ).toEqual([]);
+  });
+
+  it("does not mutate text or add layout risks to safe fixes", () => {
+    const input = "Verse\nAm G       D  \nSing";
+    const result = autoFormatChordSheet(input);
+
+    expect(result.formattedText).toBe(input);
+    expect(result.safeFixes.map((fix) => fix.code)).not.toEqual(
+      expect.arrayContaining(layoutCodes),
+    );
+    expect(layoutDiagnostics(result.projectedText).length).toBeGreaterThan(0);
+  });
+});
+
+describe("layout-risk parity with the reader", () => {
+  const cases = [
+    "Verse\nAm G\nSing it loudly now",
+    "Verse\nAm   G   D\nSing it loudly now",
+    "Verse\nAm  C#m7\nSing it loudly now",
+    "Intro\nAm    G\nC     F",
+    "Intro\nAm    G\nSing it loudly now\nC     F",
+  ];
+
+  it.each(cases)("agrees with reader layout for %j", (input) => {
+    const flaggedLines = new Set(
+      autoFormatChordSheet(input)
+        .diagnostics.filter((d) =>
+          ["chords-too-close", "consecutive-chord-rows"].includes(d.code),
+        )
+        .map((d) => `${d.code}`),
+    );
+    const readerLines = parseChordSections(input).flatMap(
+      (section) => section.lines,
+    );
+    const anchored = readerLines.filter(
+      (line): line is AnchoredChordLine => typeof line !== "string",
+    );
+    const readerStacks = anchored.some(
+      (line) => layoutChordLanes(line.chords).laneCount > 1,
+    );
+    const readerSeparateRows = anchored.filter(
+      (line) => line.lyricText === "",
+    ).length;
+
+    expect(flaggedLines.has("chords-too-close")).toBe(readerStacks);
+    expect(flaggedLines.has("consecutive-chord-rows")).toBe(
+      input.includes("Am    G\nC     F"),
+    );
+    expect(readerSeparateRows).toBe(
+      input.includes("Am    G\nC     F") ? 2 : input.includes("C     F") ? 1 : 0,
+    );
   });
 });

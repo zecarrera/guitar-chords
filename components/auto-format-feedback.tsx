@@ -1,4 +1,4 @@
-import type { AutoFormatResult } from "@/lib/auto-format";
+import { chordLayoutRiskCodes, type AutoFormatResult } from "@/lib/auto-format";
 
 type AutoFormatFeedbackProps = {
   applicationError?: string | null;
@@ -13,6 +13,12 @@ export function AutoFormatFeedback({
 }: AutoFormatFeedbackProps) {
   const warnings = result.diagnostics.filter(
     (diagnostic) => diagnostic.severity === "warning",
+  );
+  const layoutWarnings = warnings.filter((warning) =>
+    chordLayoutRiskCodes.includes(warning.code),
+  );
+  const reviewWarnings = warnings.filter(
+    (warning) => !chordLayoutRiskCodes.includes(warning.code),
   );
   const recognizedCount =
     result.recognizedPairs.length +
@@ -72,14 +78,27 @@ export function AutoFormatFeedback({
         <p className="mt-2 font-semibold text-rose-200">{applicationError}</p>
       ) : null}
 
-      {warnings.length > 0 ? (
+      {reviewWarnings.length > 0 ? (
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
-          {warnings.map((warning) => (
+          {reviewWarnings.map((warning) => (
             <li key={`${warning.line}-${warning.code}`}>
               Line {warning.line}: {warning.message}
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {layoutWarnings.length > 0 ? (
+        <div className="mt-2 border-t border-white/10 pt-2">
+          <p className="font-semibold">Layout may stack chords</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+            {layoutWarnings.map((warning) => (
+              <li key={`${warning.line}-${warning.code}`}>
+                Line {warning.line}: {warning.message}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {result.missingDiagrams.length > 0 ? (
