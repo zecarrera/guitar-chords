@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 
 import {
@@ -65,6 +66,13 @@ type LibraryPageProps = {
 };
 
 /* ─── Icons ──────────────────────────────────────────── */
+function PlayIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+    </svg>
+  );
+}
 function PencilIcon() {
   return (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -472,7 +480,7 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
         {/* Songs table */}
         {activeTab === "songs" ? (
           <div className="overflow-hidden rounded-2xl border border-white/10">
-            <div className="grid grid-cols-[2fr_1.5fr_0.5fr_1fr_0.7fr_0.6fr] gap-4 border-b border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="grid grid-cols-[2fr_1.5fr_0.5fr_1fr_0.7fr_0.8fr] gap-4 border-b border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <span>Title</span><span>Artist</span><span>Capo</span><span>Strumming</span><span>Video</span>
               <span className="text-right">Actions</span>
             </div>
@@ -480,7 +488,7 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
               {filteredSongs.length === 0 ? (
                 <p className="px-5 py-8 text-center text-sm text-slate-500">No songs found.</p>
               ) : filteredSongs.map((song) => (
-                <div key={song.id} className="grid grid-cols-[2fr_1.5fr_0.5fr_1fr_0.7fr_0.6fr] gap-4 px-5 py-3.5 text-sm text-slate-300 transition hover:bg-white/[0.03]">
+                <div key={song.id} className="grid grid-cols-[2fr_1.5fr_0.5fr_1fr_0.7fr_0.8fr] gap-4 px-5 py-3.5 text-sm text-slate-300 transition hover:bg-white/[0.03]">
                   <span className="font-semibold text-white">{song.title}</span>
                   <span>{song.artist.name}</span>
                   <span>{song.capo ?? 0}</span>
@@ -491,6 +499,10 @@ export function LibraryPage({ songs, artists, genres, customLists }: LibraryPage
                     ) : <span className="text-slate-600">—</span>}
                   </span>
                   <div className="flex items-center justify-end gap-2">
+                    <Link href={`/songs/${song.slug}`} aria-label="Play song" title="Play song"
+                      className="text-slate-500 transition hover:text-emerald-400">
+                      <PlayIcon />
+                    </Link>
                     <button type="button" onClick={() => setEditingSong(song)} aria-label="Edit song"
                       className="cursor-pointer text-slate-500 transition hover:text-white">
                       <PencilIcon />
