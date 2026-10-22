@@ -33,12 +33,12 @@ describe("AutoFormatFeedback", () => {
   it("renders a clean summary and missing-diagram information", () => {
     const markup = renderToStaticMarkup(
       <AutoFormatFeedback
-        result={autoFormatChordSheet("Verse\nG13   Cmaj9\nJazz words and more")}
+        result={autoFormatChordSheet("Verse\nD7/F#   Cmaj7#11\nJazz words and more")}
       />,
     );
 
     expect(markup).toContain("Analysis complete");
-    expect(markup).toContain("No diagram available for G13, Cmaj9");
+    expect(markup).toContain("No diagram available for D7/F#, Cmaj7#11");
     expect(markup).toContain("These chords remain playable");
   });
 

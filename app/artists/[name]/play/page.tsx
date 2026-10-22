@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PlaylistPlayer } from "@/components/playlist-player";
-import { getArtists, getChordDefinitions, getSongsByArtist } from "@/lib/data";
+import { getArtists, getSongsByArtist } from "@/lib/data";
 
 type ArtistPlaylistPageProps = {
   params: Promise<{ name: string }>;
@@ -33,10 +33,7 @@ export default async function ArtistPlaylistPage({
   const { name } = await params;
   const artistName = decodeURIComponent(name);
 
-  const [songs, chordDefinitions] = await Promise.all([
-    getSongsByArtist(artistName),
-    getChordDefinitions(),
-  ]);
+  const songs = await getSongsByArtist(artistName);
 
   if (songs.length === 0) {
     notFound();
@@ -45,7 +42,6 @@ export default async function ArtistPlaylistPage({
   return (
     <PlaylistPlayer
       artistName={artistName}
-      chordDefinitions={chordDefinitions}
       songs={songs}
     />
   );

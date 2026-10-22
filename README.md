@@ -10,6 +10,7 @@ A responsive Next.js application for storing guitar chord sheets, organizing the
 - **Artist playlist mode** — tap an artist to queue all their songs; playback advances automatically between songs
 - **Auto-save scroll speed** — preferred scroll speed is persisted back to the song after playback stops
 - **Interactive chord diagrams** — hover or tap a chord annotation to see a fretboard diagram
+- **Built-in chord reference** — browse 828 standard-tuning chords at `/chords`, with name/alias search, root/family filters, and diagrams; no chord management or database setup needed
 - **Manage panel** — add songs via PDF upload or external link, edit metadata, manage video links
 - **iPhone home screen icon** — Apple Touch Icon included for add-to-home-screen installs
 
@@ -84,7 +85,75 @@ Keep `ENABLE_DATABASE_READS=true` when you want the UI to read from PostgreSQL. 
 - `components/playlist-player.tsx` — client component managing playlist state and auto-advance between songs
 - `components/song-list.tsx` / `components/artist-list.tsx` — searchable list components used on the Songs and Artists pages
 - `lib/demo-data.ts` provides build-safe sample content that mirrors the intended domain model
+- `lib/chord-library.ts` resolves the bundled chord catalog for reference browsing, reader diagrams, and editor analysis; it never reads PostgreSQL
+- `components/chord-diagram.tsx` shares the provider-native diagram renderer between reference cards and reader tooltips
 - `prisma/schema.prisma` defines songs, artists, genres, custom lists, chord documents, video links, and import sources
+
+## Built-in chord catalog
+
+The reference uses the MIT-licensed guitar data from
+[tombatossals/chords-db](https://github.com/tombatossals/chords-db), pinned and
+vendored unchanged under `lib/vendor/chords-db/`. Its README records the exact
+revision, checksum, format, and update procedure. The copyright/permission notice
+is retained there and served at `/chord-data-LICENSE.txt`.
+
+Every surface uses **the first upstream position**, with its original notes and
+finger assignments. Other positions remain in the asset but there is no voicing
+selector, ranking, legacy fallback, or personal override. Default does not mean
+easiest: B and Bm, for example, include the upstream low F# bass. Known fingering
+inaccuracies and missing entries remain possible; absent diagrams are reported
+explicitly rather than replaced with a different chord.
+
+Enharmonic aliases such as `A#`/`Bb`, Unicode accidentals, major/minor suffixes,
+and slash-bass aliases share lookup without rewriting authored song labels or
+their positions. Catalog availability is independent of `ENABLE_DATABASE_READS`
+and `SEED_DEMO_DATA`. Neither builds nor application requests fetch provider data.
+
+### Retiring managed chord definitions
+
+Migration `20261022170000_remove_chord_definitions` **drops the old chord table**.
+Custom definitions are intentionally not imported; song documents and their
+relationships are unchanged. Historical migrations remain intact, but fresh
+installs finish with no chord-definition table and the seed no longer writes it.
+
+Before deploying this migration:
+
+1. Pause library writes and prevent traffic to the old application during the
+   migration/build switch. A preview deployment must use its own database, not
+   migrate the database serving the production application.
+2. Create a protected, restorable **full database snapshot/backup**, including
+   `ChordDefinition`, songs/documents, and `_prisma_migrations`. With Neon, use an
+   isolated pre-release branch/snapshot retained under operator access controls.
+   Restore it into an isolated database and verify table data and migration
+   history before approving the release. Never commit exports or connection
+   values.
+3. Deploy using the existing generate/migrate/seed/build order. Migrations run
+   before the build succeeds, so keep traffic paused until all steps complete.
+4. Verify `/chords` search/filters, aliases, song/playlist tooltips, editor format
+   analysis, absent-diagram feedback, and unchanged song documents. Check
+   deployment logs for failures; there is no new catalog telemetry. Resume
+   traffic only after these checks.
+
+For rollback, including a failure after migration but before a successful build,
+keep traffic stopped and restore the **entire pre-release snapshot**, including
+its migration history, into the recovery database. Point both protected runtime
+and migration environment configuration to that restored database, redeploy the
+previous application, and verify its managed chords and songs before resuming
+traffic. Restore all managed chord rows, not just the old baseline shapes.
+
+An application-only rollback is not sufficient. Do not mark a successfully
+applied migration as failed or edit historical migration files: restoring the
+snapshot restores the pre-release migration history too. This lets a later
+catalog deployment apply the removal migration normally. If writes have resumed
+since the snapshot, reconcile those newer changes before switching databases;
+blind snapshot restoration would lose them.
+
+The release rehearsal uses disposable PostgreSQL databases: migrate/seed an old
+installation with an additional custom shape, snapshot it, apply the removal,
+simulate a subsequent build failure, restore the snapshot, check old migration
+status and unchanged songs/documents, and reapply the release. Also migrate/seed
+a fresh database. This validates recovery without touching the configured
+development or production database.
 
 ## Vercel deployment
 

@@ -1,231 +1,100 @@
-import type { ChordDefinition, ChordFret } from "@/lib/types";
+import guitar from "@/lib/vendor/chords-db/guitar.json";
+import { normalizeChordName, parseChordName } from "@/lib/chord-names";
+import type { ChordCatalogEntry, ChordPosition } from "@/lib/types";
 
-export const defaultChordDefinitions: ChordDefinition[] = [
-  {
-    name: "A",
-    frets: ["x", 0, 2, 2, 2, 0],
-    fingers: [null, null, 1, 2, 3, null],
-  },
-  {
-    name: "A7",
-    frets: ["x", 0, 2, 0, 2, 0],
-    fingers: [null, null, 2, null, 3, null],
-  },
-  {
-    name: "Am",
-    frets: ["x", 0, 2, 2, 1, 0],
-    fingers: [null, null, 2, 3, 1, null],
-  },
-  {
-    name: "B",
-    frets: ["x", 2, 4, 4, 4, 2],
-    fingers: [null, 1, 3, 4, 4, 1],
-    baseFret: 2,
-  },
-  {
-    name: "B7",
-    frets: ["x", 2, 1, 2, 0, 2],
-    fingers: [null, 2, 1, 3, null, 4],
-  },
-  {
-    name: "Bb",
-    frets: ["x", 1, 3, 3, 3, 1],
-    fingers: [null, 1, 3, 4, 4, 1],
-    baseFret: 1,
-  },
-  {
-    name: "Bm",
-    frets: ["x", 2, 4, 4, 3, 2],
-    fingers: [null, 1, 3, 4, 2, 1],
-    baseFret: 2,
-  },
-  {
-    name: "C",
-    frets: ["x", 3, 2, 0, 1, 0],
-    fingers: [null, 3, 2, null, 1, null],
-  },
-  {
-    name: "C7",
-    frets: ["x", 3, 2, 3, 1, 0],
-    fingers: [null, 3, 2, 4, 1, null],
-  },
-  {
-    name: "Cm",
-    frets: ["x", 3, 5, 5, 4, 3],
-    fingers: [null, 1, 3, 4, 2, 1],
-    baseFret: 3,
-  },
-  {
-    name: "D",
-    frets: ["x", "x", 0, 2, 3, 2],
-    fingers: [null, null, null, 1, 3, 2],
-  },
-  {
-    name: "D7",
-    frets: ["x", "x", 0, 2, 1, 2],
-    fingers: [null, null, null, 2, 1, 3],
-  },
-  {
-    name: "Dm",
-    frets: ["x", "x", 0, 2, 3, 1],
-    fingers: [null, null, null, 2, 3, 1],
-  },
-  {
-    name: "E",
-    frets: [0, 2, 2, 1, 0, 0],
-    fingers: [null, 2, 3, 1, null, null],
-  },
-  {
-    name: "E7",
-    frets: [0, 2, 0, 1, 0, 0],
-    fingers: [null, 2, null, 1, null, null],
-  },
-  {
-    name: "Em",
-    frets: [0, 2, 2, 0, 0, 0],
-    fingers: [null, 2, 3, null, null, null],
-  },
-  {
-    name: "F",
-    frets: [1, 3, 3, 2, 1, 1],
-    fingers: [1, 3, 4, 2, 1, 1],
-    baseFret: 1,
-  },
-  {
-    name: "Fm",
-    frets: [1, 3, 3, 1, 1, 1],
-    fingers: [1, 3, 4, 1, 1, 1],
-    baseFret: 1,
-  },
-  {
-    name: "F#",
-    frets: [2, 4, 4, 3, 2, 2],
-    fingers: [1, 3, 4, 2, 1, 1],
-    baseFret: 2,
-  },
-  {
-    name: "F#m",
-    frets: [2, 4, 4, 2, 2, 2],
-    fingers: [1, 3, 4, 1, 1, 1],
-    baseFret: 2,
-  },
-  {
-    name: "G",
-    frets: [3, 2, 0, 0, 0, 3],
-    fingers: [2, 1, null, null, null, 3],
-  },
-  {
-    name: "G7",
-    frets: [3, 2, 0, 0, 0, 1],
-    fingers: [3, 2, null, null, null, 1],
-  },
-  {
-    name: "Amaj7",
-    frets: ["x", 0, 2, 1, 2, 0],
-    fingers: [null, null, 2, 1, 3, null],
-  },
-  {
-    name: "Asus2",
-    frets: ["x", 0, 2, 2, 0, 0],
-    fingers: [null, null, 2, 3, null, null],
-  },
-  {
-    name: "Asus4",
-    frets: ["x", 0, 2, 2, 3, 0],
-    fingers: [null, null, 1, 2, 3, null],
-  },
-  {
-    name: "Cadd9",
-    frets: ["x", 3, 2, 0, 3, 3],
-    fingers: [null, 3, 2, null, 4, 4],
-  },
-  {
-    name: "Dsus2",
-    frets: ["x", "x", 0, 2, 3, 0],
-    fingers: [null, null, null, 1, 2, null],
-  },
-  {
-    name: "Dsus4",
-    frets: ["x", "x", 0, 2, 3, 3],
-    fingers: [null, null, null, 1, 2, 3],
-  },
-  {
-    name: "Emaj7",
-    frets: [0, 2, 1, 1, 0, 0],
-    fingers: [null, 3, 1, 2, null, null],
-  },
-  {
-    name: "Gsus2",
-    frets: [3, 0, 0, 2, 3, 3],
-    fingers: [2, null, null, 1, 3, 4],
-  },
-];
+export { chordRoots, normalizeChordName } from "@/lib/chord-names";
 
-export function normalizeChordName(value: string) {
-  return value
-    .trim()
-    .replace(/♯/g, "#")
-    .replace(/♭/g, "b")
-    .replace(/\s+/g, "")
-    .replace(/maj(?=\d)/i, "maj")
-    .replace(/min/gi, "m");
+type ProviderChord = {
+  key: string;
+  suffix: string;
+  positions: ChordPosition[];
+};
+
+function chordFamily(suffix: string) {
+  if (suffix.startsWith("mmaj")) return "Minor major";
+  if (suffix.startsWith("maj")) return "Major";
+  if (suffix.startsWith("dim")) return "Diminished";
+  if (suffix.startsWith("aug")) return "Augmented";
+  if (suffix.includes("sus")) return "Suspended";
+  if (suffix.startsWith("m")) return "Minor";
+  if (suffix.startsWith("add")) return "Added tone";
+  if (suffix === "5") return "Power";
+  if (suffix === "" || suffix === "6" || suffix === "69") return "Major";
+  if (suffix === "alt" || /^[79]/.test(suffix) || suffix === "11" || suffix === "13") return "Dominant";
+  throw new Error(`Unclassified chord suffix: ${suffix}`);
 }
 
-export function buildChordShapeLookup(chordDefinitions: ChordDefinition[]) {
-  return chordDefinitions.reduce<Record<string, ChordDefinition>>((lookup, chord) => {
-    lookup[normalizeChordName(chord.name)] = chord;
-    return lookup;
-  }, {});
+function isIntegerBetween(value: number, minimum: number, maximum: number) {
+  return Number.isInteger(value) && value >= minimum && value <= maximum;
 }
 
-export const defaultChordShapeLookup = buildChordShapeLookup(defaultChordDefinitions);
+export function validateChordPosition(position: ChordPosition, label: string) {
+  const invalid = () => { throw new Error(`Invalid catalog position: ${label}`); };
+  if (
+    !Array.isArray(position.frets) || position.frets.length !== 6 ||
+    !position.frets.every((fret) => isIntegerBetween(fret, -1, 4)) ||
+    !Array.isArray(position.fingers) || position.fingers.length !== 6 ||
+    !position.fingers.every((finger, index) => isIntegerBetween(finger, -1, 4) &&
+      (finger !== -1 || position.frets[index] === -1)) ||
+    !isIntegerBetween(position.baseFret, 1, 24) ||
+    !Array.isArray(position.barres) ||
+    !position.barres.every((barre) => isIntegerBetween(barre, 1, 4) && position.frets.includes(barre)) ||
+    !Array.isArray(position.midi) ||
+    !position.midi.every((note) => isIntegerBetween(note, 0, 127)) ||
+    (position.capo !== undefined && typeof position.capo !== "boolean")
+  ) invalid();
 
-export function getChordShape(
-  chordName: string,
-  chordLookup = defaultChordShapeLookup,
-) {
-  const normalized = normalizeChordName(chordName);
-
-  return chordLookup[normalized] ?? null;
+  const expectedMidi = [40, 45, 50, 55, 59, 64].flatMap((note, index) => {
+    const fret = position.frets[index];
+    return fret < 0 ? [] : [note + (fret === 0 ? 0 : fret + position.baseFret - 1)];
+  });
+  if (expectedMidi.length === 0 || expectedMidi.join(",") !== position.midi.join(",")) invalid();
 }
 
-export function isKnownChordName(
-  value: string,
-  chordLookup = defaultChordShapeLookup,
-) {
-  return Boolean(getChordShape(value, chordLookup));
+export function buildChordCatalog(chords: ProviderChord[]): ChordCatalogEntry[] {
+  const identities = new Set<string>();
+  return chords.map((chord) => {
+    const name = normalizeChordName(chord.key + (chord.suffix === "major" ? "" : chord.suffix));
+    const parsed = parseChordName(name);
+    if (!parsed || !Array.isArray(chord.positions) || !chord.positions.length || identities.has(parsed.identity)) {
+      throw new Error(`Invalid or duplicate catalog chord: ${name}`);
+    }
+    identities.add(parsed.identity);
+    chord.positions.forEach((position, index) => validateChordPosition(position, `${name} #${index + 1}`));
+    return { name, root: parsed.root, family: parsed.bass !== null ? "Slash" : chordFamily(parsed.suffix), positions: chord.positions };
+  });
 }
 
-export function formatChordFrets(frets: ChordDefinition["frets"]) {
-  return frets.map((fret) => (typeof fret === "number" ? String(fret) : fret)).join(", ");
+export const chordCatalog = buildChordCatalog(Object.values(guitar.chords).flat());
+export const chordFamilies = [...new Set(chordCatalog.map((chord) => chord.family))].sort();
+const chordLookup = new Map(chordCatalog.map((chord) => [parseChordName(chord.name)!.identity, chord]));
+
+export function getChordEntry(name: string) {
+  const parsed = parseChordName(name);
+  return parsed ? chordLookup.get(parsed.identity) ?? null : null;
 }
 
-export function formatChordFingers(fingers: ChordDefinition["fingers"]) {
-  return fingers.map((finger) => String(finger ?? 0)).join(", ");
+export function getChordShape(name: string) {
+  return getChordEntry(name)?.positions[0] ?? null;
 }
 
-export function deserializeChordDefinition(input: {
-  id?: string;
-  name: string;
-  frets: string[];
-  fingers: number[];
-  baseFret?: number | null;
-}): ChordDefinition {
-  return {
-    id: input.id,
-    name: input.name,
-    frets: input.frets.map((fret) =>
-      fret.toLowerCase() === "x" ? "x" : Number(fret),
-    ) as ChordFret[],
-    fingers: input.fingers.map((finger) => (finger > 0 ? finger : null)),
-    baseFret: input.baseFret ?? null,
-  };
+export function isKnownChordName(name: string) {
+  return getChordEntry(name) !== null;
 }
 
-export function serializeChordFrets(frets: ChordDefinition["frets"]) {
-  return frets.map((fret) => (typeof fret === "number" ? String(fret) : fret));
-}
-
-export function serializeChordFingers(fingers: ChordDefinition["fingers"]) {
-  return fingers.map((finger) => finger ?? 0);
+export function filterChordCatalog(search: string, root = "", family = "") {
+  const query = normalizeChordName(search);
+  const parsed = parseChordName(query);
+  return chordCatalog.filter((chord) => {
+    if (root !== "" && chord.root !== Number(root)) return false;
+    if (family && chord.family !== family) return false;
+    if (!query) return true;
+    const candidate = parseChordName(chord.name)!;
+    if (parsed) {
+      return candidate.root === parsed.root &&
+        candidate.suffix.startsWith(parsed.suffix) &&
+        (parsed.bass === null || candidate.bass === parsed.bass);
+    }
+    return chord.name.includes(query);
+  });
 }

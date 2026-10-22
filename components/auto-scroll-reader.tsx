@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import { updateScrollSpeedAction } from "@/app/manage/actions";
-import { buildChordShapeLookup, getChordShape } from "@/lib/chord-library";
+import { ChordDiagram } from "@/components/chord-diagram";
 import {
   buildPositionedChordLine,
   computeMaxColumns,
@@ -22,14 +22,12 @@ import {
 } from "@/lib/playback-speed";
 import type {
   AnchoredChordLine,
-  ChordDefinition,
   ChordSection,
   VideoLink,
 } from "@/lib/types";
 
 type AutoScrollReaderProps = {
   autoPlay?: boolean;
-  chordDefinitions?: ChordDefinition[];
   controlsPageChrome?: boolean;
   defaultSpeed: number;
   onPlaybackComplete?: () => void;
@@ -43,7 +41,6 @@ type AutoScrollReaderProps = {
 };
 
 const fontScaleStorageKey = "guitar-chords:reader-font-scale";
-const guitarStrings = ["E", "A", "D", "G", "B", "e"];
 const minimumScrollSpeed = 6;
 const maximumScrollSpeed = 120;
 const speedSliderStep = 1;
@@ -79,174 +76,6 @@ function getStoredFontScaleSnapshot() {
 
 function getServerFontScaleSnapshot() {
   return null;
-}
-
-type ChordDiagramProps = {
-  chordName: string;
-  chordLookup: Record<string, ChordDefinition>;
-};
-
-function ChordDiagram({ chordName, chordLookup }: ChordDiagramProps) {
-  const chordShape = getChordShape(chordName, chordLookup);
-
-  if (!chordShape) {
-    return (
-      <div className="w-52 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
-        <p className="text-sm font-semibold text-white">{chordName}</p>
-        <p className="mt-2 text-xs leading-5 text-slate-300">
-          Chord diagram not in the built-in library yet.
-        </p>
-      </div>
-    );
-  }
-
-  const firstDisplayedFret =
-    chordShape.baseFret && chordShape.baseFret > 1 ? chordShape.baseFret : 1;
-  const stringSpacing = 30;
-  const fretSpacing = 24;
-  const gridLeft = 34;
-  const gridTop = 44;
-  const indicatorY = 24;
-  const fretCount = 5;
-  const stringsWidth = stringSpacing * (guitarStrings.length - 1);
-  const gridHeight = fretSpacing * fretCount;
-
-  return (
-    <div className="w-72 rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-black/40">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-white">{chordShape.name}</p>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            Chord diagram
-          </p>
-        </div>
-        {chordShape.baseFret && chordShape.baseFret > 1 ? (
-          <span className="rounded-full bg-white/5 px-2 py-1 text-[11px] font-semibold text-slate-200">
-            Fret {chordShape.baseFret}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-        <svg
-          viewBox="0 0 230 180"
-          role="img"
-          aria-label={`${chordShape.name} chord diagram`}
-          className="h-auto w-full"
-        >
-          {guitarStrings.map((stringName, index) => {
-            const x = gridLeft + index * stringSpacing;
-
-            return (
-              <g key={`${chordShape.name}-${stringName}-string`}>
-                <text
-                  x={x}
-                  y={12}
-                  textAnchor="middle"
-                  className="fill-slate-400 text-[10px] font-semibold"
-                >
-                  {stringName}
-                </text>
-                <line
-                  x1={x}
-                  y1={gridTop}
-                  x2={x}
-                  y2={gridTop + gridHeight}
-                  stroke="rgba(255,255,255,0.18)"
-                  strokeWidth="1.5"
-                />
-              </g>
-            );
-          })}
-
-          {Array.from({ length: fretCount + 1 }).map((_, index) => {
-            const y = gridTop + index * fretSpacing;
-
-            return (
-              <line
-                key={`fret-line-${index}`}
-                x1={gridLeft}
-                y1={y}
-                x2={gridLeft + stringsWidth}
-                y2={y}
-                stroke="rgba(255,255,255,0.18)"
-                strokeWidth={firstDisplayedFret === 1 && index === 0 ? 3 : 1.5}
-              />
-            );
-          })}
-
-          {Array.from({ length: fretCount }).map((_, index) => (
-            <text
-              key={`fret-label-${index}`}
-              x={10}
-              y={gridTop + index * fretSpacing + fretSpacing / 2 + 4}
-              className="fill-slate-500 text-[10px] font-semibold"
-            >
-              {firstDisplayedFret + index}
-            </text>
-          ))}
-
-          {guitarStrings.map((stringName, index) => {
-            const x = gridLeft + index * stringSpacing;
-            const fret = chordShape.frets[index];
-
-            if (fret === "x") {
-              return (
-                <text
-                  key={`${chordShape.name}-${stringName}-mute`}
-                  x={x}
-                  y={indicatorY}
-                  textAnchor="middle"
-                  className="fill-rose-300 text-[12px] font-semibold"
-                >
-                  x
-                </text>
-              );
-            }
-
-            if (fret === 0) {
-              return (
-                <circle
-                  key={`${chordShape.name}-${stringName}-open`}
-                  cx={x}
-                  cy={indicatorY - 2}
-                  r={6}
-                  fill="none"
-                  stroke="rgba(251,191,36,0.9)"
-                  strokeWidth="2"
-                />
-              );
-            }
-
-            const displayFret = fret - firstDisplayedFret + 1;
-
-            if (displayFret < 1 || displayFret > fretCount) {
-              return null;
-            }
-
-            const finger = chordShape.fingers[index];
-            const y = gridTop + (displayFret - 0.5) * fretSpacing;
-
-            return (
-              <g key={`${chordShape.name}-${stringName}-dot`}>
-                <circle cx={x} cy={y} r={9} fill="rgba(251,191,36,0.95)" />
-                {finger ? (
-                  <text
-                    x={x}
-                    y={y + 3}
-                    textAnchor="middle"
-                    className="fill-slate-950 text-[10px] font-bold"
-                  >
-                    {finger}
-                  </text>
-                ) : null}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-    </div>
-  );
 }
 
 type ChordLineProps = {
@@ -390,7 +219,6 @@ function getEmbeddedVideoUrl(url: string) {
 
 export function AutoScrollReader({
   autoPlay = false,
-  chordDefinitions = [],
   controlsPageChrome = false,
   defaultSpeed,
   onPlaybackComplete,
@@ -710,11 +538,6 @@ export function AutoScrollReader({
     }
   }, [videoOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const chordLookup = useMemo(
-    () => buildChordShapeLookup(chordDefinitions),
-    [chordDefinitions],
-  );
-
   function hideChordTooltip() {
     setActiveChordTooltip(null);
   }
@@ -915,7 +738,7 @@ export function AutoScrollReader({
 
       {activeChordTooltip ? (
         <div
-          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full"
+          className="pointer-events-none fixed z-50 w-72 max-w-[calc(100vw-1rem)] -translate-x-1/2 -translate-y-full"
           style={{
             left: activeChordTooltip.left,
             top: activeChordTooltip.top,
@@ -923,7 +746,6 @@ export function AutoScrollReader({
         >
           <ChordDiagram
             chordName={activeChordTooltip.chordName}
-            chordLookup={chordLookup}
           />
         </div>
       ) : null}

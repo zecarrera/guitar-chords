@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { SongPageShell } from "@/components/song-page-shell";
 import { SongPlaybackTracker } from "@/components/song-playback-tracker";
 import { SongViewChrome } from "@/components/song-view-chrome";
-import { getChordDefinitions, getSongBySlug, getSongs } from "@/lib/data";
+import { getSongBySlug, getSongs } from "@/lib/data";
 
 type SongDetailPageProps = {
   params: Promise<{
@@ -42,10 +42,7 @@ export default async function SongDetailPage({
   params,
 }: SongDetailPageProps) {
   const { slug } = await params;
-  const [song, chordDefinitions] = await Promise.all([
-    getSongBySlug(slug),
-    getChordDefinitions(),
-  ]);
+  const song = await getSongBySlug(slug);
 
   if (!song) {
     notFound();
@@ -59,7 +56,7 @@ export default async function SongDetailPage({
         slug={song.slug}
         title={song.title}
       />
-      <SongPageShell song={song} chordDefinitions={chordDefinitions} />
+      <SongPageShell song={song} />
     </>
   );
 }

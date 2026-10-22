@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
-import type { ChordDefinition, Song } from "@/lib/types";
+import type { Song } from "@/lib/types";
 
 type PlaylistPlayerProps = {
   artistName: string;
-  chordDefinitions: ChordDefinition[];
   songs: Song[];
 };
 
@@ -15,7 +14,6 @@ const AUTO_ADVANCE_DELAY_MS = 3000;
 
 export function PlaylistPlayer({
   artistName,
-  chordDefinitions,
   songs,
 }: PlaylistPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -128,7 +126,6 @@ export function PlaylistPlayer({
       <AutoScrollReader
         key={song.slug}
         autoPlay={hasStartedPlayback && currentIndex > 0}
-        chordDefinitions={chordDefinitions}
         controlsPageChrome
         defaultSpeed={song.scrollSpeed}
         onPlaybackComplete={handlePlaybackComplete}

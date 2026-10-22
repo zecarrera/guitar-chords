@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chordCatalog } from "@/lib/chord-library";
 
 import {
   classifyChordRow,
@@ -7,6 +8,12 @@ import {
 } from "@/lib/chord-syntax";
 
 describe("isChordName", () => {
+  it("recognizes every catalog label and accidental alias", () => {
+    for (const chord of chordCatalog) {
+      expect(isChordName(chord.name), chord.name).toBe(true);
+      expect(isChordName(chord.name.replace(/#/g, "♯").replace(/b/g, "♭")), chord.name).toBe(true);
+    }
+  });
   it.each([
     "A",
     "C#",
