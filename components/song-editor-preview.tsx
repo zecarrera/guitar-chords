@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
 import { parseChordSections } from "@/lib/chord-sections";
-import type { ChordDefinition } from "@/lib/types";
 
 type SongEditorPreviewProps = {
   artistOptions: Array<{
     id: string;
     name: string;
   }>;
-  chordDefinitions: ChordDefinition[];
   formId: string;
   initialArtistId: string;
   initialArtistName: string;
@@ -66,7 +64,6 @@ function readPreviewState(
 
 export function SongEditorPreview({
   artistOptions,
-  chordDefinitions,
   formId,
   initialArtistId,
   initialArtistName,
@@ -141,7 +138,6 @@ export function SongEditorPreview({
       </div>
 
       <AutoScrollReader
-        chordDefinitions={chordDefinitions}
         defaultSpeed={previewState.scrollSpeed}
         sections={previewSections}
       />

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { parseChordSections } from "@/lib/chord-sections";
-import { defaultChordDefinitions, deserializeChordDefinition } from "@/lib/chord-library";
+import { chordCatalog } from "@/lib/chord-library";
 import {
   artists as demoArtists,
   customLists as demoCustomLists,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/demo-data";
 import type {
   ArtistSummary,
-  ChordDefinition,
   CustomListSummary,
   DataSourceKind,
   GenreSummary,
@@ -308,31 +307,8 @@ export async function getImportQueue() {
   return snapshot.importQueue;
 }
 
-export async function getChordDefinitions(): Promise<ChordDefinition[]> {
-  if (!(await canUseDatabase())) {
-    return defaultChordDefinitions;
-  }
-
-  try {
-    const chordDefinitions = await prisma.chordDefinition.findMany({
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    return chordDefinitions.map((chord) =>
-      deserializeChordDefinition({
-        id: chord.id,
-        name: chord.name,
-        frets: chord.frets,
-        fingers: chord.fingers,
-        baseFret: chord.baseFret,
-      }),
-    );
-  } catch (error) {
-    console.error("Falling back to default chord library because loading failed.", error);
-    return defaultChordDefinitions;
-  }
+export function getChordCatalog() {
+  return chordCatalog;
 }
 
 export function isDatabaseConfigured() {

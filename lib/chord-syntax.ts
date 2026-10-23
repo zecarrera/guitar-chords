@@ -1,7 +1,7 @@
-import { normalizeChordName } from "@/lib/chord-library";
+import { normalizeChordName } from "@/lib/chord-names";
 
 const CHORD_NAME_PATTERN =
-  /^[A-G](?:#|b|♯|♭)?(?:maj|min|m|M|dim|aug|sus(?:2|4)?|add)?(?:2|4|5|6|7|9|11|13)?(?:[#b](?:5|9|11|13))*(?:\/[A-G](?:#|b|♯|♭)?)?$/;
+  /^[A-G](?:#|b)?(?:maj|mmaj|m|dim|aug|alt|sus(?:2|4)?(?:sus4)?|m?add)?(?:2|4|5|6|69|7|9|11|13)?(?:[#b](?:5|9|11|13))*(?:sus(?:2|4))?(?:\/[A-G](?:#|b)?)?$/;
 const BRACKETED_CHORD_PATTERN = /\[([^[\]]+)\]/g;
 
 export type ParsedChordToken = {
@@ -33,7 +33,7 @@ export type ChordRowClassification =
     };
 
 export function isChordName(value: string) {
-  return CHORD_NAME_PATTERN.test(value.trim());
+  return !/\s/.test(value.trim()) && CHORD_NAME_PATTERN.test(normalizeChordName(value));
 }
 
 function buildToken(

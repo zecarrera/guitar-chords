@@ -5,14 +5,13 @@ import { useState } from "react";
 
 import { AutoScrollReader } from "@/components/auto-scroll-reader";
 import { getDisplayableStrummingPattern } from "@/lib/strumming-pattern";
-import type { ChordDefinition, Song } from "@/lib/types";
+import type { Song } from "@/lib/types";
 
 type SongPageShellProps = {
   song: Song;
-  chordDefinitions: ChordDefinition[];
 };
 
-export function SongPageShell({ song, chordDefinitions }: SongPageShellProps) {
+export function SongPageShell({ song }: SongPageShellProps) {
   const [videoOpen, setVideoOpen] = useState(false);
 
   const hasCapo = song.capo > 0;
@@ -76,7 +75,6 @@ export function SongPageShell({ song, chordDefinitions }: SongPageShellProps) {
       </section>
 
       <AutoScrollReader
-        chordDefinitions={chordDefinitions}
         controlsPageChrome
         defaultSpeed={song.scrollSpeed}
         sections={song.sections}

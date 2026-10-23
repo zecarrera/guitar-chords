@@ -47,15 +47,15 @@ describe("autoFormatChordSheet", () => {
   });
 
   it("reports unknown diagrams without rejecting valid syntax", () => {
-    const result = autoFormatChordSheet("Verse\nG13   Cmaj9\nJazz words and more");
+    const result = autoFormatChordSheet("Verse\nD7/F#   Cmaj7#11\nJazz words and more");
 
     expect(result.recognizedPairs[0].chords.map((chord) => chord.name)).toEqual([
-      "G13",
-      "Cmaj9",
+      "D7/F#",
+      "Cmaj7#11",
     ]);
     expect(result.missingDiagrams).toEqual([
-      { line: 2, name: "G13" },
-      { line: 2, name: "Cmaj9" },
+      { line: 2, name: "D7/F#" },
+      { line: 2, name: "Cmaj7#11" },
     ]);
     expect(result.diagnostics).toEqual([
       expect.objectContaining({
@@ -66,6 +66,17 @@ describe("autoFormatChordSheet", () => {
         code: "missing-chord-diagram",
         severity: "info",
       }),
+    ]);
+  });
+
+  it("shares catalog coverage without changing authored aliases or anchors", () => {
+    const input = "Verse\nA#     C7sus4     Cmadd9     Cm7b5\nWords for this line";
+    const result = autoFormatChordSheet(input);
+    expect(result.formattedText).toBe(input);
+    expect(result.missingDiagrams).toEqual([]);
+    expect(result.recognizedPairs[0].chords).toEqual([
+      { name: "A#", start: 0 }, { name: "C7sus4", start: 7 },
+      { name: "Cmadd9", start: 18 }, { name: "Cm7b5", start: 29 },
     ]);
   });
 

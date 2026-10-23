@@ -1,6 +1,5 @@
 export type SourceType = "pdf" | "external_link";
 export type VideoType = "tutorial" | "song";
-export type ChordFret = number | "x";
 
 export type ChordAnnotation = {
   anchorColumn: number;
@@ -19,12 +18,20 @@ export type ChordSection = {
   lines: Array<string | AnchoredChordLine>;
 };
 
-export type ChordDefinition = {
-  id?: string;
+export type ChordPosition = {
+  frets: number[];
+  fingers: number[];
+  baseFret: number;
+  barres: number[];
+  midi: number[];
+  capo?: boolean;
+};
+
+export type ChordCatalogEntry = {
   name: string;
-  frets: ChordFret[];
-  fingers: Array<number | null>;
-  baseFret?: number | null;
+  root: number;
+  family: string;
+  positions: ChordPosition[];
 };
 
 export type VideoLink = {

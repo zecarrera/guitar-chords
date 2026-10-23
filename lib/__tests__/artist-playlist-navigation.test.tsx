@@ -12,7 +12,7 @@ describe("artist playlist navigation", () => {
     };
 
     const markup = renderToStaticMarkup(
-      <SongPageShell chordDefinitions={[]} song={song} />,
+      <SongPageShell song={song} />,
     );
 
     expect(markup).toContain('href="/artists/The%20Harbor%20Lights/play"');

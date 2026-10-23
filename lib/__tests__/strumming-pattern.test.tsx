@@ -30,7 +30,7 @@ describe("getDisplayableStrummingPattern", () => {
 
   it("renders a labeled pattern in the standard song header", () => {
     const markup = renderToStaticMarkup(
-      <SongPageShell chordDefinitions={[]} song={createSong("D DU UDU")} />,
+      <SongPageShell song={createSong("D DU UDU")} />,
     );
 
     expect(markup).toContain("Strumming: D DU UDU");
@@ -40,7 +40,6 @@ describe("getDisplayableStrummingPattern", () => {
     for (const strummingPattern of [null, "   "]) {
       const markup = renderToStaticMarkup(
         <SongPageShell
-          chordDefinitions={[]}
           song={createSong(strummingPattern)}
         />,
       );
